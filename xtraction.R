@@ -142,8 +142,19 @@ fchisq <- function (p, d, fitinfo ) {
 
   # return ( yvec )
 
-  a <- svd ( d$cov )
-  covi <- a$u %*% diag( 1./a$d ) %*% t( a$u )
+  covi <- d$covi
+  if ( is.null ( covi ) ) {
+    if ( is.null ( d$cov ) ) {
+      # diagonal 1 
+      covi <- diag ( rep( 1, times=length( fvec ) ) )
+    } else {
+      # svd-based inverse of cov
+      a <- svd ( d$cov )
+      covi <- a$u %*% diag( 1./a$d ) %*% t( a$u )
+    }
+  # } else {
+  #   message( "using existing covi" )
+  }
 
   dfy <- yvec - fvec
 
@@ -184,9 +195,20 @@ fminimize <- function (par0, fitinfo, fitdata, bs = NULL ) {
 
   # message( "# [fminimize] ddim = ", ddim[1], ", ", ddim[2] )
 
+  # full covariance matrix
   b <- cbind( t( fitdata$twop ),   t( apply( fitdata$threep, c(3) , t ) ) )
+  d[["cov"]] <- cov( b ) / ddim[2]
 
-  d[["cov"]] <- cov(b, b) / ddim[2]
+  # block diagonal covariance matrix
+  #d[["cov"]] <- array ( 0, c(ddim[1], ddim[1]) )
+  #d$cov[1:twop_dim[1], 1:twop_dim[1]] <- cov ( t( fitdata$twop ) ) / ddim[2]
+  #b <- cbind( t( apply( fitdata$threep, c(3) , t ) ) )
+  #d$cov[(twop_dim[1]+1):ddim[1], (twop_dim[1]+1):ddim[1]] <- cov ( b ) / ddim[2]
+
+  rm(b)
+
+  b <- svd ( d$cov )
+  d[["covi"]] <- b$u %*% diag( 1./b$d ) %*% t( b$u )
 
   rm(b)
 
@@ -197,7 +219,9 @@ fminimize <- function (par0, fitinfo, fitdata, bs = NULL ) {
   #############################################################
   # fit on ORIGINAL data
   #############################################################
-  uorig <- optim ( par, fchisq, gr = NULL, d=d, fitinfo =fitinfo )
+  uorig <- optim ( par, fchisq, gr = NULL, control = list(maxit = 100000, abstol=1.e-14, reltol=1.e-12 ), d=d, fitinfo =fitinfo)
+
+  # return ( uorig )
 
   if ( uorig$convergence != 0 ) {
     stop( "[fminimize] optim orig exit status ", uorig$convergence )
@@ -206,37 +230,66 @@ fminimize <- function (par0, fitinfo, fitdata, bs = NULL ) {
   #############################################################
   # fit on SAMPLED data
   #############################################################
+  if ( !is.null ( bs ) && bs$nsample > 0 ) {
+    bs[["fitres"]]      <- array ( dim=c(bs$nsample, length(par) ) )
+    bs[["chisq"]]       <- numeric()
+    bs[["data"]]        <- array( dim=c( bs$nsample, ddim[1] ) )
+    bs[["cov"]]         <- array( dim=c( bs$nsample, ddim[1], ddim[1] ) )
+    bs[["counts"]]      <- integer()
+    bs[["convergence"]] <- integer()
 
-  bs[["fitres"]] <- array ( bs$nsample, length(par) )
-  bs[["chisq"]] <- numeric()
-
-  for ( s in 1:bs$nsample ) {
+    for ( s in 1:bs$nsample ) {
   
-    ds <- list()
+      ds <- list()
 
-    idx <- sample.int ( n=ddim[2], size=ddim[2], replace = TRUE )
-
-    ds[["twop"]] <- apply ( fitdata$twop[,idx], c(1), mean )
+      idx <- sample.int ( n=ddim[2], size=ddim[2], replace = TRUE )
+      # cat( "[", s, "]", formatC( idx, width=5, format="d" ) , "\n")
   
-    ds[["threep"]] <- apply ( fitdata$threep[,idx], c(1,2), mean )
+      ds[["twop"]] <- apply ( fitdata$twop[,idx, drop=F], c(1), mean )
+    
+      ds[["threep"]] <- apply ( fitdata$threep[,,idx, drop=F], c(1,2), mean )
+  
+      bs$data[s,] <- apply( cbind( t( fitdata$twop[,idx, drop=F] ),   t( apply( fitdata$threep[,,idx, drop=F], c(3) , t ) ) ) , c(2) , mean )
+  
+  
+      # cov constant
+      # ds[["cov"]] <- d$cov
+  
+      # full cov per sample
+      b <- cbind( t( fitdata$twop[,idx, drop=F] ),   t( apply( fitdata$threep[,,idx, drop=F], c(3) , t ) ) )
+      ds[["cov"]] <- cov( b ) / ddim[2]
+  
+      # block diagonal cov per sample
+      #ds[["cov"]] <- array ( 0, c(ddim[1], ddim[1]) )
+      #ds$cov[1:twop_dim[1], 1:twop_dim[1]] <- cov ( t( fitdata$twop[,idx, drop=F] ) ) / ddim[2]
+      #b <- cbind( t( apply( fitdata$threep[,,idx,drop=F], c(3) , t ) ) )
+      #ds$cov[(twop_dim[1]+1):ddim[1], (twop_dim[1]+1):ddim[1]] <- cov ( b ) / ddim[2]
+  
+      bs$cov[s,,] <- ds$cov
+  
+      rm(b)
+      b <- svd ( ds$cov )
+      ds[["covi"]] <- b$u %*% diag( 1./b$d ) %*% t( b$u )
+  
+      rm(b)
+  
+      par <- par0
+  
+      u <- optim ( par, fchisq, gr = NULL, control = list(maxit = 100000, abstol=1.e-14, reltol=1.e-12), d=ds, fitinfo =fitinfo )
+  
+      if ( u$convergence != 0 ) {
+        stop( "[fminimize] optim exit status ", u$convergence )
+      }
+  
+      bs$fitres[s,] <- u$par
+      bs$chisq[s]   <- u$value
+  
+      bs$counts[s]  <- u$counts[1]
+      bs$convergence[s] <- u$convergence
+  
+    }  # end of bootstrap sampling
 
-    b <- cbind( t( fitdata$twop[,idx] ),   t( apply( fitdata$threep[,,idx], c(3) , t ) ) )
-
-    ds[["cov"]] <- cov(b, b) / ddim[2]
-
-    rm(b)
-
-    u <- optim ( par, fchisq, gr = NULL, d=ds, fitinfo =fitinfo )
-
-    if ( u$convergence != 0 ) {
-      stop( "[fminimize] optim exit status ", u$convergence )
-    }
-
-    bs$fitres[s,] <- u$par
-    bs$chisq[s]   <- u$value
-
-  }  # end of bootstrap sampling
-
+  }  # end of if bs not null and samples > 0
 
   #############################################################
   # analyse bootstrap
@@ -248,6 +301,7 @@ fminimize <- function (par0, fitinfo, fitdata, bs = NULL ) {
   res$par_cov   <- cov( bs$fitres )
   res$orig      <- uorig
   res$bs        <- bs
+  res$info      <- fitinfo
 
   return ( res )
 
@@ -266,7 +320,7 @@ run_min <- function( ens="cB211.072.64", obs="xq-conn", nconf=790, nsrc=8, TT=12
                      path_to_data="..",
                      twop_tf_range, threep_tf_range, threep_tc_range,
                      lvl=0, par0 =c(1,1,1),
-                     nsample = 1000 ) {
+                     nsample = 100, output_tag="fit" ) {
 
   twop_filename <- paste ( path_to_data, "/", ens, "/", obs, "/", "twop.pseudoscalar.orbit.PX", p[1], "_PY", p[2], "_PZ", p[3], ".re.corr", sep="" )
   if ( !file.exists( twop_filename) ) stop( "Could not find ", twop_filename )
@@ -280,12 +334,28 @@ run_min <- function( ens="cB211.072.64", obs="xq-conn", nconf=790, nsrc=8, TT=12
 
   for (idt in 1:length(threep_tf_range) )  {
     dt <- threep_tf_range[idt]
-  
-    threep_filename <- paste ( path_to_data, "/", ens, "/", obs, "/", "threep.conn.", operator, ".dtsnk", dt, ".PX", p[1], "_PY", p[2], "_PZ", p[3], ".re.corr", sep="" )
-    if ( !file.exists( threep_filename) ) stop( "Could not find ", threep_filename )
-    message( "# [run_min] reading 3pt from file ", threep_filename )
 
-    threep_data[idt,,] <- apply( array( read.table ( threep_filename )$V2, dim=c(TT, nsrc, nconf) ), c(1,3), mean )
+    if ( dt <= TT / 2 ) {
+  
+      threep_filename <- paste ( path_to_data, "/", ens, "/", obs, "/", "threep.conn.", operator, ".dtsnk", dt, ".PX", p[1], "_PY", p[2], "_PZ", p[3], ".re.corr", sep="" )
+      if ( !file.exists( threep_filename) ) stop( "Could not find ", threep_filename )
+      message( "# [run_min] reading 3pt from file ", threep_filename )
+
+      threep_data[idt,,] <- apply( array( read.table ( threep_filename )$V2, dim=c(TT, nsrc, nconf) ), c(1,3), mean )
+
+    } else {
+      threep_filename <- paste ( 
+                                path_to_data, "/", ens, "/", obs, "/", "threep.conn.", operator, ".dtsnk", TT-dt, ".PX", p[1], "_PY", p[2], "_PZ", p[3], ".re.corr", sep=""
+      )
+
+      if ( !file.exists( threep_filename) ) stop( "Could not find ", threep_filename )
+      message( "# [run_min] reading 3pt from file ", threep_filename )
+      
+      idx <- ( TT : 1 ) %% TT + 1
+
+      threep_data[idt,,] <- apply( array( read.table ( threep_filename )$V2, dim=c(TT, nsrc, nconf) ), c(1,3), mean )[idx,,drop=F]
+
+    }
   }
 
   # return ( threep_data )
@@ -311,7 +381,7 @@ run_min <- function( ens="cB211.072.64", obs="xq-conn", nconf=790, nsrc=8, TT=12
   fitinfo[["tf_range_twop"]]   <- ( twop_tf_range[1] : twop_tf_range[2] )
   fitinfo[["tf_range_threep"]] <- threep_tf_range
   fitinfo[["tc_range_threep"]] <- ( threep_tc_range[1] : threep_tc_range[2] )
-  fitinfo[["ftwop"]]          <- ftwop
+  fitinfo[["ftwop"]]           <- ftwop
   if ( operator == "g4_D4" ) {
     fitinfo[["fthreep"]]       <- fthreep44
   } else if ( operator == "g4_Dk" ) {
@@ -338,6 +408,8 @@ run_min <- function( ens="cB211.072.64", obs="xq-conn", nconf=790, nsrc=8, TT=12
   # call minizer
   #############################################################
   fitres <- fminimize ( fitparam, fitinfo, fitdata, bs )
+
+  # return (fitres)
 
   plt <- list()
 
@@ -400,6 +472,51 @@ run_min <- function( ens="cB211.072.64", obs="xq-conn", nconf=790, nsrc=8, TT=12
     }
   }
 
+  #############################################################
+  # write plot data to file
+  #############################################################
+  # twop
+  output_filename <- paste( "twop.", output_tag, ".plt", sep="" )
+  cat ( "# ", date(), "\n", file=output_filename, append=F )
+  for ( i in 1:dim( plt$data$twop)[1] ) {
+
+    cat ( 
+         formatC ( plt$data$twop[i,1], width=3, format="d" ),
+         formatC ( plt$data$twop[i,2], width=16, digits=7, format="e" ),
+         formatC ( plt$data$twop[i,3], width=16, digits=7, format="e" ),
+         formatC ( plt$data$twop[i,4], width=16, digits=7, format="e" ),
+         formatC ( plt$data$twop[i,5], width=16, digits=7, format="e" ),
+         formatC ( plt$data$twop[i,6], width=16, digits=7, format="e" ),
+         #
+         formatC ( plt$fit$twop[i,2], width=16, digits=7, format="e" ),
+         formatC ( plt$fit$twop[i,3], width=16, digits=7, format="e" ),
+         "\n", sep="", file=output_filename, append=T )
+  }
+
+  # threep
+  output_filename <- paste( "threepp.", output_tag, ".plt", sep="" )
+  cat ( "# ", date(), "\n", file=output_filename, append=F )
+  for ( i in 1:dim( plt$data$threep)[1] ) {
+    for ( k in 1:dim( plt$data$threep)[2] ) {
+
+      cat ( 
+         formatC ( plt$data$threep[i,k,1], width=3, format="d" ),
+         formatC ( plt$data$threep[i,k,2], width=3, format="d" ),
+         formatC ( plt$data$threep[i,k,3], width=16, digits=7, format="e" ),
+         formatC ( plt$data$threep[i,k,4], width=16, digits=7, format="e" ),
+         formatC ( plt$data$threep[i,k,5], width=16, digits=7, format="e" ),
+         formatC ( plt$data$threep[i,k,6], width=16, digits=7, format="e" ),
+         formatC ( plt$data$threep[i,k,7], width=16, digits=7, format="e" ),
+         #
+         formatC ( plt$fit$threep[i,k,3], width=16, digits=7, format="e" ),
+         formatC ( plt$fit$threep[i,k,4], width=16, digits=7, format="e" ),
+         "\n", sep="", file=output_filename, append=T )
+    }
+  }
+
+
+ 
+
 
   #############################################################
   # return data, info and res
@@ -407,3 +524,23 @@ run_min <- function( ens="cB211.072.64", obs="xq-conn", nconf=790, nsrc=8, TT=12
   return ( invisible(list(data=fitdata, info=fitinfo, res=fitres, plt=plt) ) )
 
 }  # end of run_min
+
+
+#############################################################
+#############################################################
+ 
+#############################################################
+# sequence of fits to check systematics
+#############################################################
+fit_sequence <- function ( ) {
+
+  TT <- 128
+
+  r <- run_min ( ens="cB211.072.64", obs="xq-conn", nconf=790, nsrc=8, TT=128,
+                     p=c(0,0,0), operator="g4_D4",
+                     path_to_data="..",
+                     twop_tf_range, threep_tf_range, threep_tc_range,
+                     lvl=0, par0 =c(1,1,1),
+                     nsample = 100, output_tag="fit" )
+
+  }
