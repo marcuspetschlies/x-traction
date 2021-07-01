@@ -36,7 +36,7 @@ ftwop <- function( p, tf, fitinfo ) {
   res <- p[1]^2 / (2 * p[2] ) * ( exp ( -p[2] * tf )  + exp ( -p[2] * ( TT - tf ) ) )
   
   if ( lvl > 0 ) {
-    res <- res +  p[3]^2 / (2 * p[4] ) * ( exp ( -p[3] * tf )  + exp ( -p[4] * ( TT - tf ) ) )
+    res <- res +  p[3]^2 / (2 * p[4] ) * ( exp ( -p[4] * tf )  + exp ( -p[4] * ( TT - tf ) ) )
   }
  
   #message( "# [ftwop] done ")
@@ -298,7 +298,9 @@ fminimize <- function (par0, fitinfo, fitdata, bs = NULL ) {
   res$par_value <- uorig$par
   res$chisq     <- uorig$value
   res$dof       <- ddim[1] - length(par)
-  res$par_cov   <- cov( bs$fitres )
+  if ( !is.null ( bs ) && bs$nsample > 0 ) {
+    res$par_cov   <- cov( bs$fitres )
+  }
   res$orig      <- uorig
   res$bs        <- bs
   res$info      <- fitinfo
@@ -447,28 +449,34 @@ run_min <- function( ens="cB211.072.64", obs="xq-conn", nconf=790, nsrc=8, TT=12
   plt$fit <- list()
 
   # twop
-  plt$fit$twop <- array (  dim=c( length( fitinfo$tf_range_twop ), 3 ) )
+  plt$fit$twop <- array ( 0, dim=c( length( fitinfo$tf_range_twop ), 4 ) )
 
-  for ( i in 1:length( fitinfo$tf_range_twop ) ) {
-    tf <- fitinfo$tf_range_twop[i]
+  if ( bs$nsample > 0 ) {
+    if ( bs$nsample > 0 ) {
+      for ( i in 1:length( fitinfo$tf_range_twop ) ) {
+        tf <- fitinfo$tf_range_twop[i]
+ 
+        u <- apply ( fitres$bs$fitres, c(1), fitinfo$ftwop, tf = tf, fitinfo = fitinfo )
 
-    u <- apply ( fitres$bs$fitres, c(1), fitinfo$ftwop, tf = tf, fitinfo = fitinfo )
-
-    plt$fit$twop [i,] <- c ( tf, mean( u ), sqrt( var ( u ) ) )
+        plt$fit$twop [i,] <- c ( tf, mean( u ), sqrt( var ( u ) ) )
+      }
+    }
   }
 
   # threep
-  plt$fit$threep <- array (  dim=c( length( fitinfo$tf_range_threep ), length( fitinfo$tc_range_threep ), 4 ) )
+  plt$fit$threep <- array ( 0, dim=c( length( fitinfo$tf_range_threep ), length( fitinfo$tc_range_threep ), 5 ) )
 
-  for ( i in 1:length( fitinfo$tf_range_threep ) ) {
-    tf <- fitinfo$tf_range_threep[i]
+  if ( bs$nsample > 0 ) {
+    for ( i in 1:length( fitinfo$tf_range_threep ) ) {
+      tf <- fitinfo$tf_range_threep[i]
 
-    for ( k in 1:length( fitinfo$tc_range_threep ) ) {
-      tc <- fitinfo$tc_range_threep[k]
+      for ( k in 1:length( fitinfo$tc_range_threep ) ) {
+        tc <- fitinfo$tc_range_threep[k]
 
-      u <- apply ( fitres$bs$fitres, c(1), fitinfo$fthreep, tf = tf, tc = tc, fitinfo = fitinfo )
+        u <- apply ( fitres$bs$fitres, c(1), fitinfo$fthreep, tf = tf, tc = tc, fitinfo = fitinfo )
 
-      plt$fit$threep [i,k,] <- c ( tf, tc, mean( u ), sqrt( var ( u ) ) )
+        plt$fit$threep [i,k,] <- c ( tf, tc, mean( u ), sqrt( var ( u ) ) )
+      }
     }
   }
 
