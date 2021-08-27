@@ -56,13 +56,13 @@ fthreep4k <- function ( p, tc, tf, fitinfo) {
   res <- numeric()
 
   if ( lvl == 0 ) {
-    res <- rep( p[1]^2 / ( 2 * p[2] ) * p[3] * exp ( -p[2] * tf ), times=length(tc) )
+    res <- rep( -p[1]^2 / ( 2 * p[2] ) * p[3] * exp ( -p[2] * tf ), times=length(tc) )
   }
 
   if ( lvl == 1 ) {
-    res <- p[1]^2 / ( 2 * p[2] ) * p[5] * exp ( -p[2] * tf )
+    res <- ( -p[1]^2 / ( 2 * p[2] ) * p[5] * exp ( -p[2] * tf )
          + p[1]*p[3] / ( 4 * p[2] * p[4] ) * p[6] * ( exp ( -p[2] * (tf -tc) -p[4] * tc ) + exp ( -p[4] * (tf -tc) -p[2] * tc ) )
-         + p[3]^2 / ( 4 * p[4]^2 ) * p[7] * exp( -p[4] * tf )
+         + p[3]^2 / ( 4 * p[4]^2 ) * p[7] * exp( -p[4] * tf ) )
   }
 
   return ( res )
@@ -94,7 +94,7 @@ fthreep44 <- function ( p, tc, tf, fitinfo ) {
   if ( lvl == 1 ) {
     res <- ( -3./8. * p[1]^2 * p[5] * exp ( -p[2] * tf ) 
            + p[1]*p[3] / ( 4 * p[2] * p[4] ) * p[6] * ( exp ( -p[2] * (tf -tc) -p[4] * tc ) + exp ( -p[4] * (tf -tc) -p[2] * tc ) ) 
-           + p[3]^2 / ( 4 * p[4]^2 ) * p[7] * exp( -p[4] * tf ) )
+           + p[3]^2 / ( 4 * p[4]^2 ) * p[7] * exp( -p[4] * tf ) ) # + p[8] * exp(-p[2] * (TT - tf)) )
   }
 
   # message( "# [fthreep44] done ")
@@ -237,7 +237,7 @@ fminimize <- function (par0, fitinfo, fitdata, bs = NULL ) {
   #############################################################
   # fit on ORIGINAL data
   #############################################################
-  uorig <- optim ( par, fchisq, gr = NULL, control = list(maxit = 100000, abstol=1.e-14, reltol=1.e-12 ), d=d, fitinfo =fitinfo)
+  uorig <- optim ( par, fchisq, gr = NULL, control = list(maxit = 100000, abstol=1.e-14, reltol=1.e-14 ), d=d, fitinfo =fitinfo)
 
   # return ( uorig )
 
@@ -324,6 +324,10 @@ fminimize <- function (par0, fitinfo, fitdata, bs = NULL ) {
   res$par_value <- uorig$par
   res$chisq     <- uorig$value
   res$dof       <- ddim[1] - length(par)
+  res$ndata     <- ddim[1]
+  res$npar      <- length(par)
+  res$aic       <- exp ( -0.5 * ( res$chisq  + 2 * res$npar - res$ndata ) )
+  res$par_cov   <- array( 0, dim=c( length(par), length(par) ) )
   if ( !is.null ( bs ) && bs$nsample > 0 ) {
     res$par_cov   <- cov( bs$fitres )
   }
@@ -367,13 +371,19 @@ run_min <- function( ens="cB211.072.64", obs="xq-conn", nconf=790, nsrc=8, TT=12
                      path_to_data="..",
                      twop_tf_range, threep_tf_range, threep_tc_range,
                      lvl=0, par0 =c(1,1,1),
-                     nsample = 100, output_tag="fit" ) {
+                     nsample = 100, seed,
+                     output_tag="fit",
+                     twop_prefix="twop.pseudoscalar.orbit",
+                     threep_prefix="threep.conn" , 
+                     twop_col=2,
+                     threep_col=2) {
 
-  twop_filename <- paste ( path_to_data, "/", ens, "/", obs, "/", "twop.pseudoscalar.orbit.PX", p[1], "_PY", p[2], "_PZ", p[3], ".re.corr", sep="" )
+  twop_filename <- paste ( path_to_data, "/", ens, "/", obs, "/", twop_prefix, ".PX", p[1], "_PY", p[2], "_PZ", p[3], ".re.corr", sep="" )
   if ( !file.exists( twop_filename) ) stop( "Could not find ", twop_filename )
 
   message( "# [run_min] reading 2pt from file ", twop_filename )
-  d <- apply( array( read.table ( twop_filename )$V2, dim=c(TT, nsrc, nconf) ), c(1,3), mean )
+  # d <- apply( array( read.table ( twop_filename )$V2, dim=c(TT, nsrc, nconf) ), c(1,3), mean )
+  d <- apply( array( read.table ( twop_filename )[,twop_col], dim=c(TT, nsrc, nconf) ), c(1,3), mean )
   twop_data <- ( d[1:TT, ] + d[ ((TT:1)%%TT + 1), ] ) * 0.5
 
   # return ( twop_data)
@@ -385,15 +395,16 @@ run_min <- function( ens="cB211.072.64", obs="xq-conn", nconf=790, nsrc=8, TT=12
 
     if ( dt <= TT / 2 ) {
   
-      threep_filename <- paste ( path_to_data, "/", ens, "/", obs, "/", "threep.conn.", operator, ".dtsnk", dt, ".PX", p[1], "_PY", p[2], "_PZ", p[3], ".re.corr", sep="" )
+      threep_filename <- paste ( path_to_data, "/", ens, "/", obs, "/", threep_prefix, ".", operator, ".dtsnk", dt, ".PX", p[1], "_PY", p[2], "_PZ", p[3], ".re.corr", sep="" )
       if ( !file.exists( threep_filename) ) stop( "Could not find ", threep_filename )
       message( "# [run_min] reading 3pt from file ", threep_filename )
 
-      threep_data[idt,,] <- apply( array( read.table ( threep_filename )$V2, dim=c(TT, nsrc, nconf) ), c(1,3), mean )
+      # threep_data[idt,,] <- apply( array( read.table ( threep_filename )$V2, dim=c(TT, nsrc, nconf) ), c(1,3), mean )
+      threep_data[idt,,] <- apply( array( read.table ( threep_filename )[,threep_col], dim=c(TT, nsrc, nconf) ), c(1,3), mean )
 
     } else {
       threep_filename <- paste ( 
-                                path_to_data, "/", ens, "/", obs, "/", "threep.conn.", operator, ".dtsnk", TT-dt, ".PX", p[1], "_PY", p[2], "_PZ", p[3], ".re.corr", sep=""
+                                path_to_data, "/", ens, "/", obs, "/", threep_prefix, ".", operator, ".dtsnk", TT-dt, ".PX", p[1], "_PY", p[2], "_PZ", p[3], ".re.corr", sep=""
       )
 
       if ( !file.exists( threep_filename) ) stop( "Could not find ", threep_filename )
@@ -401,7 +412,7 @@ run_min <- function( ens="cB211.072.64", obs="xq-conn", nconf=790, nsrc=8, TT=12
       
       idx <- ( TT : 1 ) %% TT + 1
 
-      threep_data[idt,,] <- apply( array( read.table ( threep_filename )$V2, dim=c(TT, nsrc, nconf) ), c(1,3), mean )[idx,,drop=F]
+      threep_data[idt,,] <- apply( array( read.table ( threep_filename )[,threep_col], dim=c(TT, nsrc, nconf) ), c(1,3), mean )[idx,,drop=F]
 
     }
   }
@@ -453,6 +464,18 @@ run_min <- function( ens="cB211.072.64", obs="xq-conn", nconf=790, nsrc=8, TT=12
   #############################################################
   bs <- list()
   bs[["nsample"]] <- nsample
+
+  #############################################################
+  # initialize rng
+  #############################################################
+  if ( missing ( seed ) ) {
+    stop( "need seed value" ) 
+  } else {
+    message ( "# setting seed value ", seed )
+  }
+  bs[["seed"]]    <- seed
+  set.seed ( seed )
+
 
   #############################################################
   # call minizer
@@ -534,26 +557,42 @@ run_min <- function( ens="cB211.072.64", obs="xq-conn", nconf=790, nsrc=8, TT=12
   output_filename <- paste( "fit.", output_tag, ".res", sep="" )
   cat ( "# ", date(), "\n", file=output_filename, append=F )
 
+  cat ( "# tf_range_twop ", fitinfo$tf_range_twop, "\n", file=output_filename, append=T )
+  cat ( "# tf_range_threep ", fitinfo$tf_range_threep, "\n", file=output_filename, append=T )
+  cat ( "# tc_range_threep ", fitinfo$tc_range_threep, "\n", file=output_filename, append=T )
+  cat ( "# lvl ", fitinfo$lvl, "\n", file=output_filename, append=T )
+  cat ( "# operator ", fitinfo$operator, "\n", file=output_filename, append=T )
+  cat ( "# obs ", obs, "\n", file=output_filename, append=T )
+
+  cat ( "# threep_prefix ", threep_prefix, "\n", file=output_filename, append=T )
+  cat ( "# twop_prefix ", twop_prefix, "\n", file=output_filename, append=T )
+
+
   for ( i in 1:length(fitres$par_value) ) {
     cat ( "par", formatC(i, width=3, format="d" ), 
          formatC(fitres$par_value[i], width=16,  digits=7),
          formatC( sqrt( fitres$par_cov[i,i]), width=16,  digits=7), "\n",
          file = output_filename, append=T )
   }
-  cat ("chisq ", fitres$chisq, "\ndof ", fitres$dof,  "\n",
+  cat ("chisq ", fitres$chisq, "\ndof ", fitres$dof, "\nndata ", fitres$ndata, "\nnpar ", fitres$npar, "\naic ", fitres$aic, "\n",
          file = output_filename, append=T, sep="" )
 
   for ( i in 1:(length(fitres$par_value)-1) ) {
     for ( k in (i+1):(length(fitres$par_value)) ) {
       c <- fitres$par_cov[i,k] / sqrt ( fitres$par_cov[i,i] ) / sqrt( fitres$par_cov[k,k] )
       cat ( "corr", 
-           formatC(i, width=3, format="d" ),
-           formatC(k, width=3, format="d" ),
+           formatC( i, width=3, format="d" ),
+           formatC( k, width=3, format="d" ),
            formatC( c, width=16,  digits=7), "\n",
            file = output_filename, append=T )
     }
   }
 
+  output_filename <- paste( "fit.", output_tag, ".bs", sep="" )
+  cat ( "# ", date(), "\n", file=output_filename, append=F )
+  cat ("# samples ", fitres$bs$nsample, "\n", file=output_filename, append=T )
+  cat ("# seed    ", fitres$bs$seed, "\n", file=output_filename, append=T )
+  write.table ( fitres$bs$fitres, file=output_filename, col.names=F, row.names=F, append=TRUE )
 
   #############################################################
   # write plot data to file
@@ -565,7 +604,7 @@ run_min <- function( ens="cB211.072.64", obs="xq-conn", nconf=790, nsrc=8, TT=12
   for ( i in 1:dim( plt$data$twop)[1] ) {
 
     cat ( 
-         formatC ( plt$data$twop[i,1], width=3, format="d" ),
+         formatC ( plt$data$twop[i,1], width=6, format="d" ),
          formatC ( plt$data$twop[i,2], width=16, digits=7, format="e" ),
          formatC ( plt$data$twop[i,3], width=16, digits=7, format="e" ),
          formatC ( plt$data$twop[i,4], width=16, digits=7, format="e" ),
@@ -585,8 +624,8 @@ run_min <- function( ens="cB211.072.64", obs="xq-conn", nconf=790, nsrc=8, TT=12
     for ( k in 1:dim( plt$data$threep)[2] ) {
 
       cat ( 
-         formatC ( plt$data$threep[i,k,1], width=3, format="d" ),
-         formatC ( plt$data$threep[i,k,2], width=3, format="d" ),
+         formatC ( plt$data$threep[i,k,1], width=6, format="d" ),
+         formatC ( plt$data$threep[i,k,2], width=6, format="d" ),
          formatC ( plt$data$threep[i,k,3], width=16, digits=7, format="e" ),
          formatC ( plt$data$threep[i,k,4], width=16, digits=7, format="e" ),
          formatC ( plt$data$threep[i,k,5], width=16, digits=7, format="e" ),
@@ -611,36 +650,55 @@ run_min <- function( ens="cB211.072.64", obs="xq-conn", nconf=790, nsrc=8, TT=12
 
 }  # end of run_min
 
-
 #############################################################
 #############################################################
  
 #############################################################
 # sequence of fits to check systematics
 #############################################################
-fit_sequence <- function ( ) {
+fit_sequence_conn <- function (seed ) {
 
   TT    <- 128
+
   obs   <- "xq-conn"
+
   ens   <- "cB211.072.64"
-  nconf <- 790
+
+  # nconf <- 790
+  nconf <- 745
+
   nsrc  <- 8
   operator <- "g4_D4"
   path_to_data  <- ".."
-  nsample       <- 100
+  nsample       <- 600
 
   lvl <- 0
 
   mom <- c(0,0,0)
 
   par0 <- c( 50., 0.06 , 1. )
+  # par0 <- c( 50, 0.06, 0, 1, 0.5, 0, 0 )
 
   threep_tf_list <- c( 24, 36, 48, 56, 64, 72, 80, 92, 104 )
+  # threep_tf_list <- c( 56, 64, 72, 80, 92, 104 )
 
-  twop_tf_range <- c( 48, 64 ) 
+  # twop_tf_range <- c( 48, 64 ) 
+  twop_tf_range <- c( 32, 64 ) 
 
-  for ( itf in 4:(length(threep_tf_list)-1) ) {
-    for ( ktf in (itf+1):length(threep_tf_list) ) {
+
+  threep_prefix <- "select.threep.conn"
+  twop_prefix   <- "twop.pseudoscalar.orbit"
+  twop_col      <- 2
+  threep_col    <- 2
+
+
+  for ( itf in 1:length(threep_tf_list) ) 
+  # for ( itf in 1:1 )
+  {
+    for ( ktf in itf:length(threep_tf_list) ) 
+    # for ( ktf in itf:itf)
+    # for ( ktf in 4:4)
+    {
 
       ts_tag <- "ts"
       for ( j in itf:ktf ) {
@@ -653,12 +711,15 @@ fit_sequence <- function ( ) {
 
     threep_tf_range <- c( threep_tf_list[itf:ktf] )
 
-    for ( tc in 0:8 ) {
+    threep_tc_max <- min( ( threep_tf_range * 3 ) %/% 8 )
+
+    for ( tc in 0:threep_tc_max ) {
 
       threep_tc_range <- c(-tc, tc )
 
-      tag <- paste( ens, ".", ts_tag, ".tc", tc, ".tf", twop_tf_range[1], "_", twop_tf_range[2], sep="" )
+      tag <- paste( ens, ".", obs, ".", ts_tag, ".tc", tc, ".tf", twop_tf_range[1], "_", twop_tf_range[2], sep="" )
       message ( "# [fit_sequence] tag = ", tag )
+
 
       r <- run_min ( ens          = ens,
                  obs          = obs, 
@@ -671,10 +732,218 @@ fit_sequence <- function ( ) {
                  lvl          = lvl,
                  par0         = par0,
                  nsample      = nsample, 
+                 seed         = seed,
                  output_tag   = tag ,
-                 twop_tf_range, threep_tf_range, threep_tc_range
+                 twop_tf_range, threep_tf_range, threep_tc_range,
+                 threep_prefix = threep_prefix,
+                 twop_prefix   = twop_prefix,
+                 twop_col      = twop_col,
+                 threep_col    = threep_col
       )
 
     }
+  }}
+}  # end of fit_sequence_conn
+
+
+#############################################################
+#############################################################
+ 
+#############################################################
+# sequence of fits to check systematics
+#############################################################
+fit_sequence_xg <- function ( seed  ) {
+
+  TT    <- 128
+
+  obs   <- "xg-disc"
+
+  ens   <- "cB211.072.64"
+
+  nconf <- 745
+
+  nsrc  <- 1
+  operator <- "g4_Dk"
+  path_to_data  <- ".."
+  nsample       <- 600
+
+  lvl <- 0
+
+  mom <- c(0,0,1)
+
+  par0 <- c( 2.e-04, 0.06, 0 )
+
+  # threep_tf_list <- c( 6, 7, 8, 9, 10, 11, 12, 14, 16, 20, 24, 28, 32)
+  threep_tf_list <- c( 12, 16, 20, 24, 28, 32)
+
+  # twop_tf_range <- c( 48, 64 ) 
+  twop_tf_range <- c( 32, 64 ) 
+
+
+  threep_prefix <- "threep.orbit.src.nstout10_0.1290"
+  twop_prefix   <- "twop.orbit.gf5.gi5" 
+  twop_col      <- 1
+  threep_col    <- 1 
+
+
+#  for ( itf in 1:(length(threep_tf_list)) ) 
+#  {
+    itf <- 3
+#    for ( ktf in (itf):length(threep_tf_list) ) 
+   #  for ( ktf in itf:itf)
+#    {
+     ktf <- 6
+
+      ts_tag <- "ts"
+      for ( j in itf:ktf ) {
+        if ( j == itf ) {
+          ts_tag <- paste ( ts_tag, threep_tf_list[j], sep="" )
+        } else {
+          ts_tag <- paste ( ts_tag, "_", threep_tf_list[j], sep="" )
+        }
+      }
+
+    threep_tf_range <- c( threep_tf_list[itf:ktf] )
+
+    # cat( "# [fit_sequence] threep_tf_range = ", threep_tf_range, "\n" )
+
+    threep_tc_max <- min( ( threep_tf_range * 3 ) %/% 8 )
+
+#    for ( tc in 0:threep_tc_max ) 
+#    {
+      tc <- 7
+
+      threep_tc_range <- c(-tc, tc )
+
+      tag <- paste( ens, ".", obs, ".", ts_tag, ".tc", tc, ".tf", twop_tf_range[1], "_", twop_tf_range[2], sep="" )
+
+      message ( "# [fit_sequence] tag = ", tag )
+
+      r <- run_min ( ens      = ens,
+                 obs          = obs, 
+                 nconf        = nconf,
+                 nsrc         = nsrc, 
+                 TT           = TT,
+                 p            = mom, 
+                 operator     = operator,
+                 path_to_data = path_to_data,
+                 lvl          = lvl,
+                 par0         = par0,
+                 nsample      = nsample,
+                 seed         = seed,
+                 output_tag   = tag ,
+                 twop_tf_range, threep_tf_range, threep_tc_range,
+                 threep_prefix = threep_prefix,
+                 twop_prefix   = twop_prefix,
+                 twop_col      = twop_col,
+                 threep_col    = threep_col
+      )
+
+#    }
+#  }
+#  }
+}  # end of fit_sequence
+
+
+#############################################################
+#############################################################
+ 
+#############################################################
+# sequence of fits to check systematics
+#############################################################
+fit_sequence_xq_disc <- function ( seed ) {
+
+  TT    <- 128
+
+  # obs   <- "xq-disc"
+  # threep_prefix <- "threep.orbit.src.es3.nev200.Nstoch1"
+
+  # obs   <- "xq-disc-strange"
+  # threep_prefix <- "threep.orbit.src.es1.nev0.Nstoch1"
+
+  obs   <- "xq-disc-charm"
+  threep_prefix <- "threep.orbit.src.es1.nev0.Nstoch12"
+
+  ens   <- "cB211.072.64"
+
+  nconf <- 745
+
+  nsrc  <- 1
+  operator <- "g4_Dk"
+  path_to_data  <- ".."
+  nsample       <- 600
+
+  lvl <- 0
+
+  mom <- c(0,0,1)
+
+  par0 <- c( 2.e-04, 0.06, 0 )
+
+  # threep_tf_list <- c( 6, 7, 8, 9, 10, 11, 12, 14, 16, 20, 24, 28, 32)
+  threep_tf_list <- c( 12, 16, 20, 24, 28, 32)
+
+  # twop_tf_range <- c( 48, 64 ) 
+  twop_tf_range <- c( 32, 64 ) 
+
+
+  twop_prefix   <- "twop.orbit.gf5.gi5" 
+  twop_col      <- 1
+  threep_col    <- 1 
+
+
+  # for ( itf in 1:(length(threep_tf_list)-1) ) 
+  # for ( itf in 1:(length(threep_tf_list)) ) 
+  for ( itf in 1:1 )
+  {
+    # for ( ktf in itf:length(threep_tf_list) ) 
+    # for ( ktf in itf:itf)
+    for ( ktf in 6:6)
+    {
+
+      ts_tag <- "ts"
+      for ( j in itf:ktf ) {
+        if ( j == itf ) {
+          ts_tag <- paste ( ts_tag, threep_tf_list[j], sep="" )
+        } else {
+          ts_tag <- paste ( ts_tag, "_", threep_tf_list[j], sep="" )
+        }
+      }
+
+    threep_tf_range <- c( threep_tf_list[itf:ktf] )
+
+    # cat( "# [fit_sequence] threep_tf_range = ", threep_tf_range, "\n" )
+
+    threep_tc_max <- min( ( threep_tf_range * 3 ) %/% 8 )
+
+#    for ( tc in 0:threep_tc_max )
+#    {
+    tc <- 4
+
+      threep_tc_range <- c(-tc, tc )
+
+      tag <- paste( ens, ".", obs, ".", ts_tag, ".tc", tc, ".tf", twop_tf_range[1], "_", twop_tf_range[2], sep="" )
+      message ( "# [fit_sequence] tag = ", tag )
+
+      r <- run_min ( ens      = ens,
+                 obs          = obs, 
+                 nconf        = nconf,
+                 nsrc         = nsrc, 
+                 TT           = TT,
+                 p            = mom, 
+                 operator     = operator,
+                 path_to_data = path_to_data,
+                 lvl          = lvl,
+                 par0         = par0,
+                 nsample      = nsample, 
+                 seed         = seed,
+                 output_tag   = tag ,
+                 twop_tf_range, threep_tf_range, threep_tc_range,
+                 threep_prefix = threep_prefix,
+                 twop_prefix   = twop_prefix,
+                 twop_col      = twop_col,
+                 threep_col    = threep_col
+      )
+
+#    }
   }}
 }  # end of fit_sequence
