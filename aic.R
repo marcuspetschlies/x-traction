@@ -45,22 +45,38 @@ aic_stats <- function(workpath="/data/nf211/x/R/"
 #  if ( missing ( seed ) ) stop( "[aic_stats] need seed value" )
 
   prefix_list <- c( 
-                   "xq-conn/lvl0",
-                   "xq-disc/lvl0",
-                   "xq-disc-strange/lvl0",
-                   "xq-disc-charm/lvl0",
-                   "xg-disc/nstout10/lvl0" 
+                   # "xq-conn/lvl0",
+                   # "xq-disc/lvl0",
+                   # "xq-disc-strange/lvl0",
+                   # "xq-disc-charm/lvl0",
+                   # "xg-disc/nstout10/lvl0" 
+                   "xg-disc/nstout0/lvl0",
+                   "xg-disc/nstout1/lvl0",
+                   "xg-disc/nstout2/lvl0",
+                   "xg-disc/nstout4/lvl0",
+                   "xg-disc/nstout8/lvl0",
+                   "xg-disc/nstout10/lvl0",
+                   "xg-disc/nstout20/lvl0",
+                   "xg-disc/nstout30/lvl0"
   )
 
   #####################################################################
   # read data into list v
   #####################################################################
   f_list <- c(
-    "fit.cB211.072.64.xq-conn",
-    "fit.cB211.072.64.xq-disc",
-    "fit.cB211.072.64.xq-disc-strange",
-    "fit.cB211.072.64.xq-disc-charm",
-    "fit.cB211.072.64.xg-disc"
+    # "fit.cB211.072.64.xq-conn",
+    # "fit.cB211.072.64.xq-disc",
+    # "fit.cB211.072.64.xq-disc-strange",
+    # "fit.cB211.072.64.xq-disc-charm",
+    # "fit.cB211.072.64.xg-disc"
+    "fit.cB211.072.64.xg-disc.nstout0",
+    "fit.cB211.072.64.xg-disc.nstout1",
+    "fit.cB211.072.64.xg-disc.nstout2",
+    "fit.cB211.072.64.xg-disc.nstout4",
+    "fit.cB211.072.64.xg-disc.nstout8",
+    "fit.cB211.072.64.xg-disc.nstout10",
+    "fit.cB211.072.64.xg-disc.nstout20",
+    "fit.cB211.072.64.xg-disc.nstout30"
   )
 
   v <- list()
