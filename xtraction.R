@@ -239,6 +239,10 @@ fminimize <- function (par0, fitinfo, fitdata, bs = NULL ) {
   #############################################################
   uorig <- optim ( par, fchisq, gr = NULL, control = list(maxit = 100000, abstol=1.e-14, reltol=1.e-14 ), d=d, fitinfo =fitinfo)
 
+  # uorig <- optim ( par, fchisq, gr = NULL, 
+  #                 control = list(maxit = 100000, abstol=1.e-14, reltol=1.e-14 ),
+  #                 method="BFGS", d=d, fitinfo =fitinfo)
+
   # return ( uorig )
 
   if ( uorig$convergence != 0 ) {
@@ -752,26 +756,28 @@ fit_sequence_conn <- function (seed ) {
 #############################################################
 # sequence of fits to check systematics
 #############################################################
-fit_sequence_xg <- function ( seed  ) {
+fit_sequence_xg <- function ( seed , nstout = -1 , path_to_data="./") {
 
   TT    <- 128
 
-  obs   <- "xg-disc"
 
   ens   <- "cB211.072.64"
 
   nconf <- 745
 
+  
+
   nsrc  <- 1
   operator <- "g4_Dk"
-  path_to_data  <- ".."
+
   nsample       <- 600
 
   lvl <- 0
 
   mom <- c(0,0,1)
 
-  par0 <- c( 2.e-04, 0.06, 0 )
+  par0 <- c( 1.e-03, 0.1, 0 )
+  # par0 <- c( -0.009409329, 0.1134688, 0.5202603 )
 
   # threep_tf_list <- c( 6, 7, 8, 9, 10, 11, 12, 14, 16, 20, 24, 28, 32)
   threep_tf_list <- c( 12, 16, 20, 24, 28, 32)
@@ -779,20 +785,22 @@ fit_sequence_xg <- function ( seed  ) {
   # twop_tf_range <- c( 48, 64 ) 
   twop_tf_range <- c( 32, 64 ) 
 
+  type <- "rectangle"
 
-  threep_prefix <- "threep.orbit.src.nstout10_0.1290"
+  obs   <- paste( "xg-disc.nstout", nstout , ".", type , sep ="")
+
+  threep_prefix <- paste( "threep.orbit.src.", type, ".nstout", nstout, "_0.1290", sep="" )
   twop_prefix   <- "twop.orbit.gf5.gi5" 
   twop_col      <- 1
   threep_col    <- 1 
 
 
-#  for ( itf in 1:(length(threep_tf_list)) ) 
-#  {
-    itf <- 3
-#    for ( ktf in (itf):length(threep_tf_list) ) 
-   #  for ( ktf in itf:itf)
-#    {
-     ktf <- 6
+  for ( itf in 1:(length(threep_tf_list)) ) 
+  {
+
+    for ( ktf in (itf):length(threep_tf_list) ) 
+    {
+
 
       ts_tag <- "ts"
       for ( j in itf:ktf ) {
@@ -809,15 +817,14 @@ fit_sequence_xg <- function ( seed  ) {
 
     threep_tc_max <- min( ( threep_tf_range * 3 ) %/% 8 )
 
-#    for ( tc in 0:threep_tc_max ) 
-#    {
-      tc <- 7
+    for ( tc in 0:threep_tc_max ) 
+    {
 
       threep_tc_range <- c(-tc, tc )
 
       tag <- paste( ens, ".", obs, ".", ts_tag, ".tc", tc, ".tf", twop_tf_range[1], "_", twop_tf_range[2], sep="" )
 
-      message ( "# [fit_sequence] tag = ", tag )
+      message ( "# [fit_sequence_xg] tag = ", tag )
 
       r <- run_min ( ens      = ens,
                  obs          = obs, 
@@ -839,10 +846,10 @@ fit_sequence_xg <- function ( seed  ) {
                  threep_col    = threep_col
       )
 
-#    }
-#  }
-#  }
-}  # end of fit_sequence
+    }
+  }
+  }
+}  # end of fit_sequence_xg
 
 
 #############################################################
