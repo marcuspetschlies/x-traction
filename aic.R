@@ -55,9 +55,7 @@ aic_stats <- function(workpath="/data/nf211/x/R/"
                    "xg-disc/nstout2/lvl0",
                    "xg-disc/nstout4/lvl0",
                    "xg-disc/nstout8/lvl0",
-                   "xg-disc/nstout10/lvl0",
-                   "xg-disc/nstout20/lvl0",
-                   "xg-disc/nstout30/lvl0"
+                   "xg-disc/nstout10/lvl0"
   )
 
   #####################################################################
@@ -69,14 +67,12 @@ aic_stats <- function(workpath="/data/nf211/x/R/"
     # "fit.cB211.072.64.xq-disc-strange",
     # "fit.cB211.072.64.xq-disc-charm",
     # "fit.cB211.072.64.xg-disc"
-    "fit.cB211.072.64.xg-disc.nstout0",
-    "fit.cB211.072.64.xg-disc.nstout1",
-    "fit.cB211.072.64.xg-disc.nstout2",
-    "fit.cB211.072.64.xg-disc.nstout4",
-    "fit.cB211.072.64.xg-disc.nstout8",
-    "fit.cB211.072.64.xg-disc.nstout10",
-    "fit.cB211.072.64.xg-disc.nstout20",
-    "fit.cB211.072.64.xg-disc.nstout30"
+    "fit.cB211.072.64.xg-disc.nstout0.rectangle",
+    "fit.cB211.072.64.xg-disc.nstout1.rectangle",
+    "fit.cB211.072.64.xg-disc.nstout2.rectangle",
+    "fit.cB211.072.64.xg-disc.nstout4.rectangle",
+    "fit.cB211.072.64.xg-disc.nstout8.rectangle",
+    "fit.cB211.072.64.xg-disc.nstout10.rectangle"
   )
 
   v <- list()

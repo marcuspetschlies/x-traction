@@ -10,9 +10,9 @@ Z_qqs2 <- c(1.163, 0.012 )
 Z_gg2 <- c(1.08, 0.17 )
 
 # mixing coefficients
-Z_gq1 <- c(  0.232, 0 )
-Z_gq2 <- c(  0.083, 0 )
-Z_qg1 <- c( -0.027, 0 )
+#Z_gq1 <- c(  0.232, 0 )
+#Z_gq2 <- c(  0.083, 0 )
+#Z_qg1 <- c( -0.027, 0 )
 
 #Z_gq1 <- c( 0, 0 )
 #Z_gq2 <- c( 0, 0 )
@@ -21,6 +21,13 @@ Z_qg1 <- c( -0.027, 0 )
 #Z_gq1 <- c(  0.232, 0.232 )
 #Z_gq2 <- c(  0.083, 0.083 )
 #Z_qg1 <- c( -0.027, 0.027 )
+
+Z_qg1 <- c(  0.232, 0 )
+Z_qg2 <- c(  0.083, 0 )
+Z_gq1 <- c( -0.027, 0 )
+Z_gq2 <- c(  0.0  , 0 )
+
+
 
 #####################################################################
 # read data
@@ -105,18 +112,33 @@ combine_renormalized <- function(workpath="/data/nf211/x/R/" ) {
 
   sZ_qg1  <- rnorm( n = ns, mean = Z_qg1[1], sd = Z_qg1[2] )
 
+  sZ_qg2  <- rnorm( n = ns, mean = Z_qg2[1], sd = Z_qg2[2] )
+
   #####################################################################
   # combine
   #####################################################################
 
+#  # light
+#  rxl_s <- ( sZ_qq1 * xL_s + sZ_qq2 * xl_s ) + ( sdZ_qq1 * 2 * xL_s + sdZ_qq2 * ( 2 * xl_s + xs_s + xc_s ) ) / nf + sZ_qg1 * xg_s / nf
+#  
+#  # strange
+#  rxs_s <- (                 sZ_qq2 * xs_s ) + ( sdZ_qq1 * 2 * xL_s + sdZ_qq2 * ( 2 * xl_s + xs_s + xc_s ) ) / nf + sZ_qg1 * xg_s / nf
+#  
+#  # charm
+#  rxc_s <- (                 sZ_qq2 * xc_s ) + ( sdZ_qq1 * 2 * xL_s + sdZ_qq2 * ( 2 * xl_s + xs_s + xc_s ) ) / nf + sZ_qg1 * xg_s / nf
+#  
+#  # gluon
+#  rxg_s <- sZ_gq1 * 2 * xL_s + sZ_gq2 * ( 2 * xl_s  + xs_s + xc_s )  + sZ_gg2 * xg_s
+
+
   # light
-  rxl_s <- ( sZ_qq1 * xL_s + sZ_qq2 * xl_s ) + ( sdZ_qq1 * 2 * xL_s + sdZ_qq2 * ( 2 * xl_s + xs_s + xc_s ) ) / nf + sZ_qg1 * xg_s / nf
+  rxl_s <- ( sZ_qq1 * xL_s + sZ_qq2 * xl_s ) + ( sdZ_qq1 * 2 * xL_s + sdZ_qq2 * ( 2 * xl_s + xs_s + xc_s ) ) / nf + sZ_qg2 * xg_s / nf
   
   # strange
-  rxs_s <- (                 sZ_qq2 * xs_s ) + ( sdZ_qq1 * 2 * xL_s + sdZ_qq2 * ( 2 * xl_s + xs_s + xc_s ) ) / nf + sZ_qg1 * xg_s / nf
+  rxs_s <- (                 sZ_qq2 * xs_s ) + ( sdZ_qq1 * 2 * xL_s + sdZ_qq2 * ( 2 * xl_s + xs_s + xc_s ) ) / nf + sZ_qg2 * xg_s / nf
   
   # charm
-  rxc_s <- (                 sZ_qq2 * xc_s ) + ( sdZ_qq1 * 2 * xL_s + sdZ_qq2 * ( 2 * xl_s + xs_s + xc_s ) ) / nf + sZ_qg1 * xg_s / nf
+  rxc_s <- (                 sZ_qq2 * xc_s ) + ( sdZ_qq1 * 2 * xL_s + sdZ_qq2 * ( 2 * xl_s + xs_s + xc_s ) ) / nf + sZ_qg2 * xg_s / nf
   
   # gluon
   rxg_s <- sZ_gq1 * 2 * xL_s + sZ_gq2 * ( 2 * xl_s  + xs_s + xc_s )  + sZ_gg2 * xg_s
