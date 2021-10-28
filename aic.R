@@ -38,9 +38,14 @@ wdf <- function(x, w=w, m=m, s=s, a=0 ) {
 #####################################################################
 # combine RC-factor weighted sample data
 #####################################################################
-aic_stats <- function(workpath="/data/nf211/x/R/" 
-#                        nsample = 1000 , seed 
-                       ) {
+aic_stats <- function( workpath="/data/nf211/x/R/" , lvl=0, 
+                       stout_type=c( "clover", "rectangle" ),
+                       stout_n=c(0,1,2,4,8,10,20), stout_r = 0.1290,
+                       xg_prefix="xg-disc-kaon",
+                       op,
+                       ens="cB211.072.64",
+                       xq_conn_prefix
+                     ) {
 
 #  if ( missing ( seed ) ) stop( "[aic_stats] need seed value" )
 
@@ -49,31 +54,114 @@ aic_stats <- function(workpath="/data/nf211/x/R/"
                    # "xq-disc/lvl0",
                    # "xq-disc-strange/lvl0",
                    # "xq-disc-charm/lvl0",
-                   # "xg-disc/nstout10/lvl0" 
-                   "xg-disc/nstout0/lvl0",
-                   "xg-disc/nstout1/lvl0",
-                   "xg-disc/nstout2/lvl0",
-                   "xg-disc/nstout4/lvl0",
-                   "xg-disc/nstout8/lvl0",
-                   "xg-disc/nstout10/lvl0"
+                   #####################################################################
+                   # xq disc kaon
+                   #####################################################################
+                   #"xq-disc-kaon-ll/lvl0",
+                   #"xq-disc-kaon-ss/lvl0",
+                   #"xq-disc-kaon-cc/lvl0"
+                   #####################################################################
+                   # xg for nstout pion
+                   #####################################################################
+                   #"xg-disc/nstout0/lvl0",
+                   #"xg-disc/nstout1/lvl0",
+                   #"xg-disc/nstout2/lvl0",
+                   #"xg-disc/nstout4/lvl0",
+                   #"xg-disc/nstout8/lvl0",
+                   #"xg-disc/nstout10/lvl0"
+                   #####################################################################
+                   # xg for nstout kaon
+                   #####################################################################
+                   #"xg-disc-kaon/nstout0/lvl0",
+                   #"xg-disc-kaon/nstout1/lvl0",
+                   #"xg-disc-kaon/nstout2/lvl0",
+                   #"xg-disc-kaon/nstout4/lvl0",
+                   #"xg-disc-kaon/nstout8/lvl0",
+                   #"xg-disc-kaon/nstout10/lvl0"
   )
+
+
+  if ( length(stout_n) != 0 && length(stout_type) != 0 ) {
+    for ( t in stout_type ) {
+      for ( n in stout_n ) {
+        p <- paste( xg_prefix, "/nstout", n, "/lvl", lvl, sep="" )
+        prefix_list <- c( prefix_list, p )
+      }
+    }
+  }
+  
+  if ( length(xq_conn_prefix) != 0 ) {
+    for ( s in xq_conn_prefix ) {
+      if ( !missing(op) ) {
+        p <- paste( s, "-", op,  "/lvl", lvl, sep="" )
+      } else {
+        p <- paste( s, "/lvl", lvl, sep="" )
+      }
+      prefix_list <- c( prefix_list, p )
+    }
+  }
 
   #####################################################################
   # read data into list v
   #####################################################################
   f_list <- c(
+              #####################################################################
+              # xq conn pion
+              #####################################################################
     # "fit.cB211.072.64.xq-conn",
+              #####################################################################
+              # xq disc ll, ss, cc pion
+              #####################################################################
     # "fit.cB211.072.64.xq-disc",
     # "fit.cB211.072.64.xq-disc-strange",
     # "fit.cB211.072.64.xq-disc-charm",
+              #####################################################################
+              # xq disc ll, ss, cc kaon
+              #####################################################################
+     #"fit.cB211.072.64.xq-disc-kaon-ll",
+     #"fit.cB211.072.64.xq-disc-kaon-ss",
+     #"fit.cB211.072.64.xq-disc-kaon-cc"
+              #####################################################################
+              # xq disc pion
+              #####################################################################
     # "fit.cB211.072.64.xg-disc"
-    "fit.cB211.072.64.xg-disc.nstout0.rectangle",
-    "fit.cB211.072.64.xg-disc.nstout1.rectangle",
-    "fit.cB211.072.64.xg-disc.nstout2.rectangle",
-    "fit.cB211.072.64.xg-disc.nstout4.rectangle",
-    "fit.cB211.072.64.xg-disc.nstout8.rectangle",
-    "fit.cB211.072.64.xg-disc.nstout10.rectangle"
+              #####################################################################
+              # xg for nstout pion
+              #####################################################################
+    #"fit.cB211.072.64.xg-disc.nstout0.rectangle",
+    #"fit.cB211.072.64.xg-disc.nstout1.rectangle",
+    #"fit.cB211.072.64.xg-disc.nstout2.rectangle",
+    #"fit.cB211.072.64.xg-disc.nstout4.rectangle",
+    #"fit.cB211.072.64.xg-disc.nstout8.rectangle",
+    #"fit.cB211.072.64.xg-disc.nstout10.rectangle"
+              #####################################################################
+              # xg for nstout kaon
+              #####################################################################
+    #"fit.cB211.072.64.xg-disc-kaon.nstout0.rectangle",
+    #"fit.cB211.072.64.xg-disc-kaon.nstout1.rectangle",
+    #"fit.cB211.072.64.xg-disc-kaon.nstout2.rectangle",
+    #"fit.cB211.072.64.xg-disc-kaon.nstout4.rectangle",
+    #"fit.cB211.072.64.xg-disc-kaon.nstout8.rectangle",
+    #"fit.cB211.072.64.xg-disc-kaon.nstout10.rectangle"
   )
+
+  if ( length(stout_n) != 0 && length(stout_type) != 0 ) {
+    for ( t in stout_type ) {
+      for ( n in stout_n ) {
+        f <- paste( "fit.", ens, ".", xg_prefix, "-", t, ".nstout", n, "_", formatC(stout_r, width=6, digits=4, format="f"), sep="" )
+        f_list <- c( f_list, f )
+      }
+    }
+  }
+  
+  if ( length(xq_conn_prefix) != 0 ) {
+    for ( s in xq_conn_prefix ) {
+        f <- paste( "fit.", ens, ".", s, sep="" )
+        f_list <- c( f_list, f )
+    }
+  }
+
+  # return ( list( f=f_list, p=prefix_list ))
 
   v <- list()
 
