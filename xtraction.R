@@ -745,42 +745,48 @@ fit_sequence_conn <- function (seed, aic_file, obs, threep_prefix,   nsample = 6
       }
 
       tag <- paste( ens, ".", obs, ".", ts_tag, ".tc", tc, ".tf", twop_tf_range[1], "_", twop_tf_range[2], sep="" )
-      message ( "# [fit_sequence_conn] tag = ", tag )
+      # message ( "# [fit_sequence_conn] tag = ", tag )
+
+      # check existence of res file
+
+      file_res <- paste ( "fit.", tag, ".res", sep="" )
+      if ( file.exists ( file_res ) ) {
+        message ( "# [fit_sequence_conn]  SKIP  ", tag )
+        next
+      } else {
+        message ( "# [fit_sequence_conn]  START ", tag )
+      }
 
       message ("# [fit_sequence_conn] threep_tf_range = ", formatC(threep_tf_range , width=4, format="d" ))
       message ("# [fit_sequence_conn] threep_tc_range = ", formatC(threep_tc_range , width=4, format="d" ))
       message ("# [fit_sequence_conn] twop_tf_range   = ", formatC(twop_tf_range , width=4, format="d" ))
 
-        r <- run_min ( ens          = ens,
-                   obs          = obs,
-                   nconf        = nconf,
-                   nsrc         = nsrc,
-                   TT           = TT,
-                   p            = mom,
-                   operator     = operator,
-                   path_to_data = path_to_data,
-                   lvl          = lvl,
-                   par0         = par0,
-                   nsample      = nsample,
-                   seed         = seed,
-                   output_tag   = tag ,
-                  twop_tf_range, threep_tf_range, threep_tc_range,
-                   threep_prefix = threep_prefix,
-                   twop_prefix   = twop_prefix,
-                   twop_col      = twop_col,
-                  threep_col    = threep_col
-        )
+      r <- run_min ( ens          = ens,
+                     obs          = obs,
+                     nconf        = nconf,
+                     nsrc         = nsrc,
+                     TT           = TT,
+                     p            = mom,
+                     operator     = operator,
+                     path_to_data = path_to_data,
+                     lvl          = lvl,
+                     par0         = par0,
+                     nsample      = nsample,
+                     seed         = seed,
+                     output_tag   = tag ,
+                     twop_tf_range, threep_tf_range, threep_tc_range,
+                     threep_prefix = threep_prefix,
+                     twop_prefix   = twop_prefix,
+                     twop_col      = twop_col,
+                    threep_col    = threep_col
+      )
 
-
-
+      message ( "# [fit_sequence_conn]  END   ", tag )
 
     }
 
-
-
   } else {
 
-  
     for ( itf in 1:length(threep_tf_list) ) 
     # for ( itf in 1:1 )
     {
@@ -843,7 +849,7 @@ fit_sequence_conn <- function (seed, aic_file, obs, threep_prefix,   nsample = 6
 #############################################################
 # sequence of fits to check systematics
 #############################################################
-fit_sequence_xg <- function ( seed , nstout = -1 , path_to_data="./", type = "clover" ) {
+fit_sequence_xg <- function ( seed , nstout = -1 , path_to_data="./", type = "clover" , aic_file ) {
 
   TT    <- 128
 
@@ -881,9 +887,87 @@ fit_sequence_xg <- function ( seed , nstout = -1 , path_to_data="./", type = "cl
   twop_col      <- 1
   threep_col    <- 1 
 
+  if ( !missing(aic_file ) ) {
 
-  for ( itf in 1:(length(threep_tf_list)) ) 
-  {
+    d <- read.table ( aic_file )
+
+    wt <- sum ( d$V10 )
+
+    r <- d$V10 / wt
+
+    idx <- which(r>0.00001 )
+
+    message ( "# [fit_sequence_xg] including fraction ",   sum ( r [ idx ] ) , " with ", length(idx), " entries" )
+
+    for ( i in idx ) {
+
+      lvl <- d[i,1]
+
+      twop_tf_range <- c( d[i,2], d[i,3])
+
+      tc <- d[i,4]
+
+      threep_tc_range <- c(-tc, tc )
+
+      s <- unlist( strsplit(x=as.character(d[i,5]), split="[ts_]") )
+
+      threep_tf_list <- as.integer( s[3:length(s)] )
+
+      threep_tf_range <- c( threep_tf_list )
+
+      ts_tag <- "ts"
+      for ( j in 1:length(threep_tf_list) ) {
+        if ( j == 1 ) {
+          ts_tag <- paste ( ts_tag, threep_tf_list[j], sep="" )
+        } else {
+          ts_tag <- paste ( ts_tag, "_", threep_tf_list[j], sep="" )
+        }
+      }
+
+      tag <- paste( ens, ".", obs, ".", ts_tag, ".tc", tc, ".tf", twop_tf_range[1], "_", twop_tf_range[2], sep="" )
+      # message ( "# [fit_sequence_conn] tag = ", tag )
+
+      # check existence of res file
+
+      file_res <- paste ( "fit.", tag, ".res", sep="" )
+      if ( file.exists ( file_res ) ) {
+        message ( "# [fit_sequence_xg]  SKIP  ", tag )
+        next
+      } else {
+        message ( "# [fit_sequence_xg]  START ", tag )
+      }
+
+      message ("# [fit_sequence_xg] threep_tf_range = ", formatC(threep_tf_range , width=4, format="d" ))
+      message ("# [fit_sequence_xg] threep_tc_range = ", formatC(threep_tc_range , width=4, format="d" ))
+      message ("# [fit_sequence_xg] twop_tf_range   = ", formatC(twop_tf_range , width=4, format="d" ))
+  
+      r <- run_min ( ens      = ens,
+                 obs          = obs,
+                 nconf        = nconf,
+                 nsrc         = nsrc,
+                 TT           = TT,
+                 p            = mom,
+                 operator     = operator,
+                 path_to_data = path_to_data,
+                 lvl          = lvl,
+                 par0         = par0,
+                 nsample      = nsample,
+                 seed         = seed,
+                 output_tag   = tag ,
+                 twop_tf_range, threep_tf_range, threep_tc_range,
+                 threep_prefix = threep_prefix,
+                 twop_prefix   = twop_prefix,
+                 twop_col      = twop_col,
+                 threep_col    = threep_col
+      )
+
+
+    }
+
+  } else {
+
+    for ( itf in 1:(length(threep_tf_list)) ) 
+    {
 
     for ( ktf in (itf):length(threep_tf_list) ) 
     {
@@ -934,7 +1018,8 @@ fit_sequence_xg <- function ( seed , nstout = -1 , path_to_data="./", type = "cl
       )
 
     }
-  }
+    }
+    }
   }
 }  # end of fit_sequence_xg
 
