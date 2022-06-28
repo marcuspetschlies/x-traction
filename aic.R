@@ -44,7 +44,7 @@ aic_stats <- function( workpath="/data/nf211/x/R/" , lvl=0,
                        xg_prefix="xg-disc-kaon",
                        op,
                        ens="cB211.072.64",
-                       xq_conn_prefix
+                       xq_conn_prefix=NULL
                      ) {
 
 #  if ( missing ( seed ) ) stop( "[aic_stats] need seed value" )

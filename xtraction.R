@@ -420,8 +420,11 @@ run_min <- function( ens="cB211.072.64", obs="xq-conn", nconf=790, nsrc=8, TT=12
       
       idx <- ( TT : 1 ) %% TT + 1
 
-      threep_data[idt,,] <- apply( array( read.table ( threep_filename )[,threep_col], dim=c(TT, nsrc, nconf) ), c(1,3), mean )[idx,,drop=F]
-
+      if        ( operator == "g4_D4" ) {
+        threep_data[idt,,] <-  apply( array( read.table ( threep_filename )[,threep_col], dim=c(TT, nsrc, nconf) ), c(1,3), mean )[idx,,drop=F]
+      } else if ( operator == "g4_Dk" ) {
+        threep_data[idt,,] <- -apply( array( read.table ( threep_filename )[,threep_col], dim=c(TT, nsrc, nconf) ), c(1,3), mean )[idx,,drop=F]
+      }
     }
   }
 
