@@ -1,3 +1,11 @@
+#####################################################################
+#####################################################################
+##
+## CLUSTER / SOCKET PARALLELIZED VERSION
+##
+#####################################################################
+#####################################################################
+
 library(foreach)
 library(doParallel)
 
@@ -34,7 +42,7 @@ Z_QG2 <- Z_QG1
 ################################################################
 #
 ################################################################
-aic_ren <- function( ns = 600, nprobe=2^16 , singlet=F , nonsinglet=F, stats=F) {
+aic_ren_cl <- function( ns = 600, nprobe=2^16 , singlet=F , nonsinglet=F, with_quantiles =F) {
 
   ensemble <- "cB211.072.64"
   lvl <- 0
@@ -224,15 +232,15 @@ aic_ren <- function( ns = 600, nprobe=2^16 , singlet=F , nonsinglet=F, stats=F) 
                                               q_d_ss$n * q_d_cc$n * g_d$n,
                                                          q_d_cc$n * g_d$n,
                                                                     g_d$n )
-    cat("# [aic_ren] w n = ", w$n, "\n",
-        "# [aic_ren] LL = ", formatC(LL, width=6, format="d"), "\n" , sep="")
+    cat("# [aic_ren_cl] w n = ", w$n, "\n",
+        "# [aic_ren_cl] LL = ", formatC(LL, width=6, format="d"), "\n" , sep="")
   
     start_time <- Sys.time()
 
     idx <- sample.int ( n=w$n, size = nprobe, replace = FALSE )
     
     end_time <- Sys.time()
-    message ( "# [aic_ren] time for idx = ", end_time - start_time )
+    message ( "# [aic_ren_cl] time for idx = ", end_time - start_time )
   
     # return(idx)
 
@@ -308,7 +316,7 @@ aic_ren <- function( ns = 600, nprobe=2^16 , singlet=F , nonsinglet=F, stats=F) 
     stopCluster(cl)
  
     end_time <- Sys.time()
-    message( "# [aic_red] time for aic bs combination = ", end_time - start_time )
+    message( "# [aic_ren_cl] time for aic bs combination = ", end_time - start_time )
 
     start_time <- Sys.time()
   
@@ -318,11 +326,11 @@ aic_ren <- function( ns = 600, nprobe=2^16 , singlet=F , nonsinglet=F, stats=F) 
     saveRDS( object = w$res, file = output_filename )
               
     end_time <- Sys.time()
-    message( "# [aic_red] time for saveRDS = ", end_time - start_time )
+    message( "# [aic_ren_cl] time for saveRDS = ", end_time - start_time )
 
     # return(w)
   
-    if ( stats ) {
+    if ( with_quantiles  ) {
   
       start_time <- Sys.time()
      
@@ -372,7 +380,7 @@ aic_ren <- function( ns = 600, nprobe=2^16 , singlet=F , nonsinglet=F, stats=F) 
       stopCluster(cl)
     
       end_time <- Sys.time()
-      message( "# [aic_red] time for quantiles = ", end_time - start_time )
+      message( "# [aic_ren_cl] time for quantiles = ", end_time - start_time )
   
       # return (bres)
     
@@ -395,7 +403,7 @@ aic_ren <- function( ns = 600, nprobe=2^16 , singlet=F , nonsinglet=F, stats=F) 
         }
       }
       
-    }  # end of if stats
+    }  # end of if with_quantiles
 
   }  # end of singlet
 
@@ -424,11 +432,11 @@ aic_ren <- function( ns = 600, nprobe=2^16 , singlet=F , nonsinglet=F, stats=F) 
                                    q_d_ll$n * q_d_ss$n * q_d_cc$n, 
                                               q_d_ss$n * q_d_cc$n, 
                                                          q_d_cc$n )
-    cat("# [aic_ren] w n = ", w$n, "\n",
-        "# [aic_ren] LL = ", formatC(LL, width=6, format="d"), "\n" , sep="")
+    cat("# [aic_ren_cl] w n = ", w$n, "\n",
+        "# [aic_ren_cl] LL = ", formatC(LL, width=6, format="d"), "\n" , sep="")
   
     idx <- sample.int ( n=w$n, size = nprobe, replace = FALSE )
-    message ( "# [aic_ren] idx done " )
+    message ( "# [aic_ren_cl] idx done " )
   
     cores=detectCores()
     cl <- makeCluster(cores[1]-1)
@@ -556,11 +564,11 @@ aic_ren <- function( ns = 600, nprobe=2^16 , singlet=F , nonsinglet=F, stats=F) 
                                    q_d_ll$n * q_d_ss$n, 
                                               q_d_ss$n )
 
-    cat("# [aic_ren] w n = ", w$n, "\n",
-        "# [aic_ren] LL = ", formatC(LL, width=6, format="d"), "\n" , sep="")
+    cat("# [aic_ren_cl] w n = ", w$n, "\n",
+        "# [aic_ren_cl] LL = ", formatC(LL, width=6, format="d"), "\n" , sep="")
   
     idx <- sample.int ( n=w$n, size = nprobe, replace = FALSE )
-    message ( "# [aic_ren] idx done " )
+    message ( "# [aic_ren_cl] idx done " )
   
     cores=detectCores()
     cl <- makeCluster(cores[1]-1)
@@ -667,4 +675,4 @@ aic_ren <- function( ns = 600, nprobe=2^16 , singlet=F , nonsinglet=F, stats=F) 
 
   return ( NULL )
 
-}  # end of aic_ren
+}  # end of aic_ren_cl

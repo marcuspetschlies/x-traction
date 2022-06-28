@@ -40,11 +40,14 @@ wdf <- function(x, w=w, m=m, s=s, a=0 ) {
 #####################################################################
 aic_stats <- function( workpath="/data/nf211/x/R/" , lvl=0, 
                        stout_type=c( "clover", "rectangle" ),
-                       stout_n=c(0,1,2,4,8,10,20), stout_r = 0.1290,
+                       # stout_n=c(0,1,2,4,8,10,20), stout_r = 0.1290,
+                       stout_n=NA, stout_r = NA ,
                        xg_prefix="xg-disc-kaon",
                        op,
                        ens="cB211.072.64",
-                       xq_conn_prefix
+                       xq_conn_prefix=NA,
+                       chisq_range=c(0.,10.),
+                       pvec=NA
                      ) {
 
 #  if ( missing ( seed ) ) stop( "[aic_stats] need seed value" )
@@ -81,7 +84,9 @@ aic_stats <- function( workpath="/data/nf211/x/R/" , lvl=0,
   )
 
 
-  if ( length(stout_n) != 0 && length(stout_type) != 0 ) {
+  # if ( length(stout_n) != 0 && length(stout_type) != 0 )
+  if ( !is.na (stout_n) && !is.na(stout_type) ) 
+  {
     for ( t in stout_type ) {
       for ( n in stout_n ) {
         p <- paste( xg_prefix, "/nstout", n, "/lvl", lvl, sep="" )
@@ -90,13 +95,19 @@ aic_stats <- function( workpath="/data/nf211/x/R/" , lvl=0,
     }
   }
   
-  if ( length(xq_conn_prefix) != 0 ) {
+  # if ( length(xq_conn_prefix) != 0 ) 
+  if ( !is.na ( xq_conn_prefix ) ) 
+  {
     for ( s in xq_conn_prefix ) {
       if ( !missing(op) ) {
         p <- paste( s, "-", op,  "/lvl", lvl, sep="" )
       } else {
         p <- paste( s, "/lvl", lvl, sep="" )
       }
+      if (!anyNA(pvec) ) {
+        p <- paste ( p, "/p", pvec[1], pvec[2], pvec[3], sep="" )
+      }
+
       prefix_list <- c( prefix_list, p )
     }
   }
@@ -145,7 +156,9 @@ aic_stats <- function( workpath="/data/nf211/x/R/" , lvl=0,
     #"fit.cB211.072.64.xg-disc-kaon.nstout10.rectangle"
   )
 
-  if ( length(stout_n) != 0 && length(stout_type) != 0 ) {
+#  if ( length(stout_n) != 0 && length(stout_type) != 0 ) 
+  if ( !is.na (stout_n) && !is.na(stout_type) ) 
+  {
     for ( t in stout_type ) {
       for ( n in stout_n ) {
         f <- paste( "fit.", ens, ".", xg_prefix, "-", t, ".nstout", n, "_", formatC(stout_r, width=6, digits=4, format="f"), sep="" )
@@ -154,7 +167,9 @@ aic_stats <- function( workpath="/data/nf211/x/R/" , lvl=0,
     }
   }
   
-  if ( length(xq_conn_prefix) != 0 ) {
+  # if ( length(xq_conn_prefix) != 0 ) 
+  if ( !is.na (xq_conn_prefix) ) 
+  {
     for ( s in xq_conn_prefix ) {
         f <- paste( "fit.", ens, ".", s, sep="" )
         f_list <- c( f_list, f )
@@ -167,7 +182,11 @@ aic_stats <- function( workpath="/data/nf211/x/R/" , lvl=0,
 
   for ( i in 1:length(f_list) ) {
     f <- paste( prefix_list[i], "/", f_list[i], ".aic", sep="") 
-    v[[i]] <- read_from_file ( f )
+    d <- read_from_file ( f )
+    idx <- which( ( d$V6/d$V9 >= chisq_range[1] ) & ( d$V6/d$V9 <= chisq_range[2] ) )
+    v[[i]] <- d[idx,]
+    message ( "# [] file ", f, " number of used entries = ", length(idx) )
+
   }
 
   #####################################################################
