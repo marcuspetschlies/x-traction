@@ -666,16 +666,16 @@ run_min <- function( ens="cB211.072.64", obs="xq-conn", nconf=790, nsrc=8, TT=12
 #############################################################
 # sequence of fits to check systematics
 #############################################################
-fit_sequence_conn <- function (seed, aic_file, obs, threep_prefix,   nsample = 600 , operator = "g4_D4", mom = c(0,0,0) ) {
+fit_sequence_conn <- function (seed, aic_file, obs, threep_prefix,   nsample = 600 , operator = "g4_D4", mom = c(0,0,0), ens, nconf, TT ) {
 
-  if ( missing ( obs ) | missing ( threep_prefix ) ) stop ( "need obs and threep_prefix" )
+  if ( missing ( obs   ) | missing ( threep_prefix ) ) stop ( "need obs and threep_prefix" )
+  if ( missing ( ens   ) ) stop ( "need ens" )
+  if ( missing ( nconf ) ) stop ( "need nconf" )
+  if ( missing ( TT    ) ) stop ( "need TT" )
 
-  TT    <- 128
-
-
-  ens   <- "cB211.072.64"
-
-  nconf <- 745
+  # TT    <- 128
+  # ens   <- "cB211.072.64"
+  # nconf <- 745
 
   nsrc  <- 8
   
@@ -690,7 +690,9 @@ fit_sequence_conn <- function (seed, aic_file, obs, threep_prefix,   nsample = 6
   # par0 <- c( 50, 0.06, 0, 1, 0.5, 0, 0 )
 
   # threep_tf_list <- c( 24, 36, 48, 56, 64, 72, 80, 92, 104 )
-  threep_tf_list <- c( 36, 48, 56, 64, 72 )
+  # threep_tf_list <- c( 36, 48, 56, 64, 72 )
+
+  threep_tf_list <- c( 30, 48, 64, 72, 80 )
 
   # twop_tf_range <- c( 48, 64 ) 
   twop_tf_range <- c( 32, 64 ) 
