@@ -240,7 +240,7 @@ fminimize <- function (par0, fitinfo, fitdata, bs = NULL ) {
   #############################################################
   # fit on ORIGINAL data
   #############################################################
-  uorig <- optim ( par, fchisq, gr = NULL, control = list(maxit = 100000, abstol=1.e-14, reltol=1.e-14 ), d=d, fitinfo =fitinfo)
+  uorig <- optim ( par, fchisq, gr = NULL, method="BFGS", control = list(maxit = 100000, abstol=1.e-14, reltol=1.e-14 ), d=d, fitinfo =fitinfo)
 
   # uorig <- optim ( par, fchisq, gr = NULL, 
   #                 control = list(maxit = 100000, abstol=1.e-14, reltol=1.e-14 ),
@@ -308,7 +308,7 @@ fminimize <- function (par0, fitinfo, fitdata, bs = NULL ) {
   
       par <- par0
   
-      u <- optim ( par, fchisq, gr = NULL, control = list(maxit = 100000, abstol=1.e-14, reltol=1.e-12), d=ds, fitinfo =fitinfo )
+      u <- optim ( par, fchisq, gr = NULL, method="BFGS", control = list(maxit = 100000, abstol=1.e-14, reltol=1.e-12), d=ds, fitinfo =fitinfo )
   
       if ( u$convergence != 0 ) {
         stop( "[fminimize] optim exit status ", u$convergence )
@@ -695,10 +695,15 @@ fit_sequence_conn <- function (seed, aic_file, obs, threep_prefix,   nsample = 6
   # threep_tf_list <- c( 24, 36, 48, 56, 64, 72, 80, 92, 104 )
   # threep_tf_list <- c( 36, 48, 56, 64, 72 )
 
-  threep_tf_list <- c( 30, 48, 64, 72, 80 )
+  # cC80 
+  # threep_tf_list <- c( 30, 48, 64, 72, 80 )
+
+  # cD96 
+  threep_tf_list <- c( 36, 58, 76, 86, 96 )
+
 
   # twop_tf_range <- c( 48, 64 ) 
-  twop_tf_range <- c( 32, 64 ) 
+  twop_tf_range <- c( 36, 72 ) 
 
 
   #obs   <- "xq-conn-kaon-ll"
@@ -854,21 +859,24 @@ fit_sequence_conn <- function (seed, aic_file, obs, threep_prefix,   nsample = 6
 #############################################################
 # sequence of fits to check systematics
 #############################################################
-fit_sequence_xg <- function ( seed , nstout = -1 , path_to_data="./", type = "clover" , aic_file ) {
+fit_sequence_xg <- function ( seed , nstout = -1 , path_to_data="./", type = "clover" , aic_file, nsample =600 ) {
 
-  TT    <- 128
+  # TT    <- 128
+  # ens   <- "cB211.072.64"
+  # nconf <- 745
 
+  # TT    <- 160
+  # ens   <- "cC211.06.80"
+  # nconf <- 400
 
-  ens   <- "cB211.072.64"
-
-  nconf <- 745
-
+  TT    <- 192
+  ens   <- "cD211.054.96"
+  nconf <- 495
   
 
   nsrc  <- 1
   operator <- "g4_Dk"
 
-  nsample       <- 600
 
   lvl <- 0
 
@@ -878,10 +886,11 @@ fit_sequence_xg <- function ( seed , nstout = -1 , path_to_data="./", type = "cl
   # par0 <- c( -0.009409329, 0.1134688, 0.5202603 )
 
   # threep_tf_list <- c( 6, 7, 8, 9, 10, 11, 12, 14, 16, 20, 24, 28, 32)
-  threep_tf_list <- c( 12, 16, 20, 24, 28, 32)
+  threep_tf_list <- c( 12, 16, 20, 24, 28, 32, 36, 40)
 
   # twop_tf_range <- c( 48, 64 ) 
-  twop_tf_range <- c( 32, 64 ) 
+  # twop_tf_range <- c( 32, 64 ) 
+  twop_tf_range <- c( 36, 72 ) 
 
 
   obs   <- paste( "xg-disc-kaon-", type, ".nstout", nstout, "_0.1290" , sep ="")
@@ -1035,9 +1044,18 @@ fit_sequence_xg <- function ( seed , nstout = -1 , path_to_data="./", type = "cl
 #############################################################
 # sequence of fits to check systematics
 #############################################################
-fit_sequence_xq_disc <- function ( seed ) {
+fit_sequence_xq_disc <- function ( seed , ens, TT, nconf, obs, threep_prefix, operator, nsample, aic_file ) {
 
-  TT    <- 128
+  if ( missing ( TT            ) ) stop ("[fit_sequence_xq_disc] need TT")
+  if ( missing ( ens           ) ) stop ("[fit_sequence_xq_disc] need ens")
+  if ( missing ( seed          ) ) stop ("[fit_sequence_xq_disc] need seed")
+  if ( missing ( nconf         ) ) stop ("[fit_sequence_xq_disc] need nconf")
+  if ( missing ( obs           ) ) stop ("[fit_sequence_xq_disc] need obs")
+  if ( missing ( operator      ) ) stop ("[fit_sequence_xq_disc] need operator")
+  if ( missing ( nsample       ) ) stop ("[fit_sequence_xq_disc] need nsample")
+  if ( missing ( threep_prefix ) ) stop ("[fit_sequence_xq_disc] need threep_prefix")
+
+#  TT    <- 128
 
 #  obs   <- "xq-disc-kaon-ll"
 #  threep_prefix <- "threep.orbit.src.es3.nev200.Nstoch1"
@@ -1045,63 +1063,89 @@ fit_sequence_xq_disc <- function ( seed ) {
 #  obs   <- "xq-disc-kaon-ss"
 #  threep_prefix <- "threep.orbit.src.es1.nev0.Nstoch1"
 
-  obs   <- "xq-disc-kaon-cc"
-  threep_prefix <- "threep.orbit.src.es1.nev0.Nstoch12"
+#  obs   <- "xq-disc-kaon-cc"
+#  threep_prefix <- "threep.orbit.src.es1.nev0.Nstoch12"
 
-  ens   <- "cB211.072.64"
+#  ens   <- "cB211.072.64"
 
-  nconf <- 745
+#  nconf <- 745
 
   nsrc  <- 1
-  operator <- "g4_Dk"
+  # operator <- "g4_Dk"
   path_to_data  <- "../../../"
-  nsample       <- 600
-
-  lvl <- 0
+  # nsample       <- 600
 
   mom <- c(0,0,1)
-
+  lvl <- 0
   par0 <- c( 5., 0.19, 0 )
 
   # threep_tf_list <- c( 6, 7, 8, 9, 10, 11, 12, 14, 16, 20, 24, 28, 32)
-  threep_tf_list <- c( 12, 16, 20, 24, 28, 32)
+  threep_tf_list <- c( 12, 16, 20, 24, 28, 32, 36, 40)
 
   # twop_tf_range <- c( 48, 64 ) 
-  twop_tf_range <- c( 32, 64 ) 
-
+  # twop_tf_range <- c( 32, 64 ) 
+  twop_tf_range <- c( 36, 72 ) 
 
   twop_prefix   <- "twop.orbit.gf5.gi5" 
   twop_col      <- 1
   threep_col    <- 1 
 
 
-  for ( itf in 1:(length(threep_tf_list)) ) 
-  {
-    for ( ktf in itf:length(threep_tf_list) ) 
-    {
+  if ( !missing(aic_file ) ) {
+
+    d <- read.table ( aic_file )
+
+    wt <- sum ( d$V10 )
+
+    r <- d$V10 / wt
+
+    idx <- which(r>0.00001 )
+
+    message ( "# [fit_sequence_disc] including fraction ",   sum ( r [ idx ] ) , " with ", length(idx), " entries" )
+
+    for ( i in idx ) {
+
+      lvl <- d[i,1]
+
+      twop_tf_range <- c( d[i,2], d[i,3])
+
+      tc <- d[i,4]
+
+      threep_tc_range <- c(-tc, tc )
+
+      s <- unlist( strsplit(x=as.character(d[i,5]), split="[ts_]") )
+
+      threep_tf_list <- as.integer( s[3:length(s)] )
 
       ts_tag <- "ts"
-      for ( j in itf:ktf ) {
-        if ( j == itf ) {
+      for ( j in 1:length(threep_tf_list) ) {
+        if ( j == 1 ) {
           ts_tag <- paste ( ts_tag, threep_tf_list[j], sep="" )
         } else {
           ts_tag <- paste ( ts_tag, "_", threep_tf_list[j], sep="" )
         }
       }
 
-    threep_tf_range <- c( threep_tf_list[itf:ktf] )
+      threep_tf_range <- c( threep_tf_list )
 
-    cat( "# [fit_sequence] threep_tf_range = ", threep_tf_range, "\n" )
-
-    threep_tc_max <- min( ( threep_tf_range * 3 ) %/% 8 )
-
-    for ( tc in 0:threep_tc_max )
-    {
-
-      threep_tc_range <- c(-tc, tc )
-
+      cat( "# [fit_sequence_disc] threep_tf_range = ", threep_tf_range, "\n" )
+    
       tag <- paste( ens, ".", obs, ".", ts_tag, ".tc", tc, ".tf", twop_tf_range[1], "_", twop_tf_range[2], sep="" )
-      message ( "# [fit_sequence] tag = ", tag )
+      message ( "# [fit_sequence_disc] tag = ", tag )
+
+      # check existence of res file
+
+      file_res <- paste ( "fit.", tag, ".res", sep="" )
+      if ( file.exists ( file_res ) ) {
+        message ( "# [fit_sequence_disc]  SKIP  ", tag )
+        next
+      } else {
+        message ( "# [fit_sequence_disc]  START ", tag )
+      }
+
+      message ("# [fit_sequence_disc] threep_tf_range = ", formatC(threep_tf_range , width=4, format="d" ))
+      message ("# [fit_sequence_disc] threep_tc_range = ", formatC(threep_tc_range , width=4, format="d" ))
+      message ("# [fit_sequence_disc] twop_tf_range   = ", formatC(twop_tf_range , width=4, format="d" ))
 
       r <- run_min ( ens      = ens,
                  obs          = obs, 
@@ -1124,5 +1168,72 @@ fit_sequence_xq_disc <- function ( seed ) {
       )
 
     }
-  }}
-}  # end of fit_sequence
+  }  else {
+
+    for ( itf in 1:(length(threep_tf_list)) ) 
+    {
+      for ( ktf in itf:length(threep_tf_list) ) 
+      {
+
+        ts_tag <- "ts"
+        for ( j in itf:ktf ) {
+          if ( j == itf ) {
+            ts_tag <- paste ( ts_tag, threep_tf_list[j], sep="" )
+          } else {
+            ts_tag <- paste ( ts_tag, "_", threep_tf_list[j], sep="" )
+          }
+        }
+
+        threep_tf_range <- c( threep_tf_list[itf:ktf] )
+        cat( "# [fit_sequence_disc] itf = ", itf, ", ktf = ", ktf, ", threep_tf_range = ", threep_tf_range, "\n" )
+    
+        threep_tc_max <- min( ( threep_tf_range * 3 ) %/% 8 )
+
+        for ( tc in 0:threep_tc_max )
+        {
+
+          threep_tc_range <- c(-tc, tc )
+
+          tag <- paste( ens, ".", obs, ".", ts_tag, ".tc", tc, ".tf", twop_tf_range[1], "_", twop_tf_range[2], sep="" )
+          message ( "# [fit_sequence_disc] tag = ", tag )
+
+          # check existence of res file
+
+          file_res <- paste ( "fit.", tag, ".res", sep="" )
+          if ( file.exists ( file_res ) ) {
+            message ( "# [fit_sequence_disc]  SKIP  ", tag )
+            next
+          } else {
+            message ( "# [fit_sequence_disc]  START ", tag )
+          }
+
+          message ("# [fit_sequence_disc] threep_tf_range = ", formatC(threep_tf_range , width=4, format="d" ))
+          message ("# [fit_sequence_disc] threep_tc_range = ", formatC(threep_tc_range , width=4, format="d" ))
+          message ("# [fit_sequence_disc] twop_tf_range   = ", formatC(twop_tf_range , width=4, format="d" ))
+
+          r <- run_min ( ens      = ens,
+                 obs          = obs, 
+                 nconf        = nconf,
+                 nsrc         = nsrc, 
+                 TT           = TT,
+                 p            = mom, 
+                 operator     = operator,
+                 path_to_data = path_to_data,
+                 lvl          = lvl,
+                 par0         = par0,
+                 nsample      = nsample, 
+                 seed         = seed,
+                 output_tag   = tag ,
+                 twop_tf_range, threep_tf_range, threep_tc_range,
+                 threep_prefix = threep_prefix,
+                 twop_prefix   = twop_prefix,
+                 twop_col      = twop_col,
+                 threep_col    = threep_col
+          )
+
+        }  # end of loop on tc
+      }  # end of loop on ktf
+    }  # end of loop on itf
+  }
+
+}  # end of fit_sequence_xq_disc
