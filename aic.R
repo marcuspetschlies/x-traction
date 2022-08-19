@@ -47,7 +47,8 @@ aic_stats <- function( workpath="/data/nf211/x/R/" , lvl=0,
                        ens="cB211.072.64",
                        xq_conn_prefix=NA,
                        chisq_range=c(0.,10.),
-                       pvec=NA
+                       pvec=NA,
+                       nsample=600
                      ) {
 
 #  if ( missing ( seed ) ) stop( "[aic_stats] need seed value" )
@@ -89,7 +90,7 @@ aic_stats <- function( workpath="/data/nf211/x/R/" , lvl=0,
   {
     for ( t in stout_type ) {
       for ( n in stout_n ) {
-        p <- paste( xg_prefix, "/nstout", n, "/lvl", lvl, sep="" )
+        p <- paste( xg_prefix, "/nstout", n, "/lvl", lvl, "/s", nsample,  sep="" )
         prefix_list <- c( prefix_list, p )
       }
     }
@@ -105,7 +106,9 @@ aic_stats <- function( workpath="/data/nf211/x/R/" , lvl=0,
         p <- paste( s, "/lvl", lvl, sep="" )
       }
       if (!anyNA(pvec) ) {
-        p <- paste ( p, "/p", pvec[1], pvec[2], pvec[3], sep="" )
+        p <- paste ( p, "/p", pvec[1], pvec[2], pvec[3], "-s", nsample, sep="" )
+      } else {
+        p <- paste( p, "/s", nsample, sep="")
       }
 
       prefix_list <- c( prefix_list, p )
@@ -213,7 +216,17 @@ aic_stats <- function( workpath="/data/nf211/x/R/" , lvl=0,
     #####################################################################
     #
     #####################################################################
-    output_file <- paste( f_list[i], ".aic_stats", sep="" )
+    output_file <- f_list[i]
+
+    if ( !missing(op) ) {
+      output_file <- paste ( output_file, "-", op, sep="" )
+    }
+
+    if (!anyNA(pvec) ) {
+      output_file <- paste ( output_file, "-p", pvec[1], pvec[2], pvec[3], sep="" )
+    }
+
+    output_file <- paste( output_file, ".aic_stats", sep="" )
     cat( "# ", date(), "\n", file=output_file, append=F)
 #    cat( "# nsample  ", nsample , "\n", append=T, file=output_file )
 
