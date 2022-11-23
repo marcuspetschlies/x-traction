@@ -97,7 +97,7 @@ aic_stats <- function( workpath="/data/nf211/x/R/" , lvl=0,
   }
   
   # if ( length(xq_conn_prefix) != 0 ) 
-  if ( !is.na ( xq_conn_prefix ) ) 
+  if ( ! any ( is.na ( xq_conn_prefix ) ) ) 
   {
     for ( s in xq_conn_prefix ) {
       if ( !missing(op) ) {
@@ -171,7 +171,7 @@ aic_stats <- function( workpath="/data/nf211/x/R/" , lvl=0,
   }
   
   # if ( length(xq_conn_prefix) != 0 ) 
-  if ( !is.na (xq_conn_prefix) ) 
+  if ( ! any ( is.na (xq_conn_prefix) ) ) 
   {
     for ( s in xq_conn_prefix ) {
         f <- paste( "fit.", ens, ".", s, sep="" )
@@ -228,7 +228,8 @@ aic_stats <- function( workpath="/data/nf211/x/R/" , lvl=0,
 
     output_file <- paste( output_file, ".aic_stats", sep="" )
     cat( "# ", date(), "\n", file=output_file, append=F)
-#    cat( "# nsample  ", nsample , "\n", append=T, file=output_file )
+    cat( "# nsample  ", nsample , "\n", append=T, file=output_file )
+    cat( "# nalpha   ", n, "\n", append=T, file=output_file )
 
     #####################################################################
     #
