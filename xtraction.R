@@ -1,4 +1,9 @@
-library(hadron)
+# library(hadron)
+
+uwerrprimary <- function ( x ) {
+  return ( list( value=mean(x), dvalue=sqrt( var(x)/length(x) ), ddvalue=0, tauint=0, dtauint=0 ) )
+
+}
 
 #######################################################
 # plot functions including error bars from the script
@@ -889,39 +894,40 @@ fit_sequence_conn <- function (seed, aic_file, obs, threep_prefix,   nsample = 6
 #############################################################
 # sequence of fits to check systematics
 #############################################################
-fit_sequence_xg <- function ( seed , nstout = -1 , path_to_data="./", type = "clover" , aic_file, nsample =600, do_plt=F ) {
+fit_sequence_xg <- function ( seed , nstout = -1 , path_to_data="./", type = "clover" , aic_file, nsample =600, do_plt=T ) {
 
   # TT    <- 128
   # ens   <- "cB211.072.64"
   # nconf <- 745
 
-  TT    <- 160
-  ens   <- "cC211.06.80"
-  nconf <- 400
+  # TT    <- 160
+  # ens   <- "cC211.06.80"
+  # nconf <- 400
 
-  #TT    <- 192
-  #ens   <- "cD211.054.96"
-  #nconf <- 495
+  TT    <- 192
+  ens   <- "cD211.054.96"
+  nconf <- 495
   
 
   nsrc  <- 1
   operator <- "g4_Dk"
 
 
-  lvl <- 0
+  lvl <- 1
 
   mom <- c(0,0,1)
 
   # par0 <- c( 5., 0.08, 0 )
-  par0 <- c( 5., 0.19, 0 )
-  # par0 <- c( -0.009409329, 0.1134688, 0.5202603 )
+  # par0 <- c( 5., 0.19, 0 )
+  par0 <- c( 5., 0.19,  1., 0.38, 0.0, 0.0, 0.0 )
 
   # threep_tf_list <- c( 6, 7, 8, 9, 10, 11, 12, 14, 16, 20, 24, 28, 32)
   threep_tf_list <- c( 12, 16, 20, 24, 28, 32, 36, 40)
 
   # twop_tf_range <- c( 48, 64 ) 
   # twop_tf_range <- c( 32, 64 ) 
-  twop_tf_range <- c( 36, 72 ) 
+  # twop_tf_range <- c( 36, 72 ) 
+  twop_tf_range <- c( 18, 72 ) 
 
 
   ### obs   <- paste( "xg-disc-kaon-", type, ".nstout", nstout, "_0.1290" , sep ="")
