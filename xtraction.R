@@ -692,7 +692,11 @@ fit_sequence_conn <- function (seed, aic_file, obs, threep_prefix,   nsample = 6
   # threep_tf_list <- c( 24, 36, 48, 56, 64, 72, 80, 92, 104 )
   # threep_tf_list <- c( 36, 48, 56, 64, 72 )
 
-  threep_tf_list <- c( 30, 48, 64, 72, 80 )
+  # cC80
+  # threep_tf_list <- c( 30, 48, 64, 72, 80 )
+
+  # cD96
+  threep_tf_list <- c( 36, 58, 76, 86, 96 )
 
   # twop_tf_range <- c( 48, 64 ) 
   twop_tf_range <- c( 32, 64 ) 
