@@ -21,11 +21,11 @@ wdf <- function(x, w=w, m=m, s=s, a=0 ) {
 ################################################################
 #
 ################################################################
-aic_ren_cl <- function( ns = 600, q_c_pvec=c(0,0,1), q_c_op="4k", nprobe=2^16 , singlet=F , nonsinglet=F, with_quantiles =F, ens, field="kaon", chisq_red_range = c( 0.9, 1.1) ) {
+aic_ren_cl_pion <- function( ns = 600, q_c_pvec=c(0,0,1), q_c_op="4k", nprobe=2^16 , singlet=F , nonsinglet=F, with_quantiles =F, ens, field = "pion", chisq_red_range = c( 0.9, 1.1) ) {
 
   if ( missing ( ens   ) ) stop ( "need ensemble name" )
 
-  # if ( missing ( field ) ) stop ( "need field name" )
+#  if ( missing ( field ) ) stop ( "need field name" )
 
   ensemble_full <- list()
   ensemble_full[["cB64"]] <- "cB211.072.64"
@@ -107,8 +107,7 @@ aic_ren_cl <- function( ns = 600, q_c_pvec=c(0,0,1), q_c_op="4k", nprobe=2^16 , 
   #####################################################
 
   q_c_ll <- list()
-  q_c_ss <- list()
-  for ( f in c( "ll", "ss" ) ) {
+  for ( f in c( "ll" ) ) {
     x.name <-  paste( "q_c_", f, sep="" )
     message ( "x = ", x.name )
     x.val <- list()
@@ -124,34 +123,9 @@ aic_ren_cl <- function( ns = 600, q_c_pvec=c(0,0,1), q_c_op="4k", nprobe=2^16 , 
     x.val <- read_aic (q = x.val )
     x.val <- cr_filter ( q = x.val )
     assign( x.name, x.val )
-
-#    eval(as.name(x)) <- read_aic (q = v )
-#    eval(as.name(x)) <- cr_filter ( q = v )
-
-#    eval(as.name(x))[["name"]] <- paste( "xq-conn-", field, "-", f , sep="" )
-#    eval(as.name(x) )$op <- "4k"
-#    eval(as.name(x) )$cr <- c( chisq_red_min, chisq_red_max )
-#    eval(as.name(x) )$lvl <- 0
-#    eval(as.name(x) )$nstout <- NA
-#    eval(as.name(x) )$f <- NULL
-#    eval(as.name(x) )$p <- paste( "p", p[1], p[2], p[3], sep="" )
-
-#    v <- eval(as.name(x) )
-#    eval(as.name(x)) <- read_aic (q = v )
-#    eval(as.name(x)) <- cr_filter ( q = v )
-  }  # end of loop on flavor combinations
+  }
 
 #  return ( list(q_c_ll=q_c_ll, q_c_ss = q_c_ss ) )
-
-
-#  q_c_ss$name <- "xq-conn-kaon-ss"
-#  q_c_ss$op <- "4k"
-#  q_c_ss$cr <- c( chisq_red_min, chisq_red_max )
-#  q_c_ss$lvl <- 0
-#  q_c_ss$nstout <- NA
-#  
-#  q_c_ss <- read_aic (q = q_c_ss )
-#  q_c_ss <- cr_filter ( q = q_c_ss )
 
   #####################################################
   # filling list for disconnected ll, ss and cc
@@ -171,7 +145,7 @@ aic_ren_cl <- function( ns = 600, q_c_pvec=c(0,0,1), q_c_op="4k", nprobe=2^16 , 
     x.val$nstout <- NA
     x.val$f <- NULL
     x.val$p <- NA
-    x.val$norm <- 1.0  # NO factor 0.5 here; factor of 1/2 for single flavor has been already included in first analysis step
+    x.val$norm <- 1.0  # factor of 1/2 has been already included in first analysis step
 
     x.val <- read_aic (q = x.val )
     x.val <- cr_filter ( q = x.val )
@@ -180,26 +154,6 @@ aic_ren_cl <- function( ns = 600, q_c_pvec=c(0,0,1), q_c_op="4k", nprobe=2^16 , 
   }
 
 #  return ( list(q_d_ll=q_d_ll, q_d_ss = q_d_ss, q_d_cc = q_d_cc ) )
-
-#  q_d_ss <- list()
-#  q_d_ss$name <- "xq-disc-kaon-ss"
-#  q_d_ss$op <- NA
-#  q_d_ss$cr <- c( chisq_red_min, chisq_red_max )
-#  q_d_ss$lvl <- 0
-#  q_d_ss$nstout <- NA
- 
-#  q_d_ss <- read_aic (q = q_d_ss )
-#  q_d_ss <- cr_filter ( q = q_d_ss )
-
-#  q_d_cc <- list()
-#  q_d_cc$name <- "xq-disc-kaon-cc"
-#  q_d_cc$op <- NA
-#  q_d_cc$cr <- c( chisq_red_min, chisq_red_max )
-#  q_d_cc$lvl <- 0
-#  q_d_cc$nstout <- NA
- 
-#  q_d_cc <- read_aic (q = q_d_cc )
-#  q_d_cc <- cr_filter ( q = q_d_cc )
 
   #####################################################
   # filling list for (disconnected) gluon
@@ -268,10 +222,11 @@ aic_ren_cl <- function( ns = 600, q_c_pvec=c(0,0,1), q_c_op="4k", nprobe=2^16 , 
   # apply read_bs
   #####################################################
   q_c_ll <- read_bs (q = q_c_ll )
-  q_c_ss <- read_bs (q = q_c_ss )
+
   q_d_ll <- read_bs (q = q_d_ll )
   q_d_ss <- read_bs (q = q_d_ss )
   q_d_cc <- read_bs (q = q_d_cc )
+
   g_d    <- read_bs (q = g_d )
   
   #####################################################
@@ -286,16 +241,15 @@ aic_ren_cl <- function( ns = 600, q_c_pvec=c(0,0,1), q_c_op="4k", nprobe=2^16 , 
     w <- list()
     # w$res <- array ( dim=c( nprobe, 5 ) )
   
-    w$n <-   q_c_ll$n * q_c_ss$n * q_d_ll$n * q_d_ss$n * q_d_cc$n * g_d$n
-    LL <- c(            q_c_ss$n * q_d_ll$n * q_d_ss$n * q_d_cc$n * g_d$n,
-                                   q_d_ll$n * q_d_ss$n * q_d_cc$n * g_d$n,
-                                              q_d_ss$n * q_d_cc$n * g_d$n,
-                                                         q_d_cc$n * g_d$n,
-                                                                    g_d$n )
-    cat ( "n values = ", formatC( c(q_c_ll$n, q_c_ss$n, q_d_ll$n, q_d_ss$n, q_d_cc$n, g_d$n), width=6, format="d"), "\n" , sep="")
+    w$n <-   q_c_ll$n * q_d_ll$n * q_d_ss$n * q_d_cc$n * g_d$n
+    LL <- c(            q_d_ll$n * q_d_ss$n * q_d_cc$n * g_d$n,
+                                   q_d_ss$n * q_d_cc$n * g_d$n,
+                                              q_d_cc$n * g_d$n,
+                                                         g_d$n )
+    cat ( "n values = ", formatC( c(q_c_ll$n, q_d_ll$n, q_d_ss$n, q_d_cc$n, g_d$n), width=6, format="d"), "\n" , sep="")
 
     cat("# [aic_ren_cl] w n = ", w$n, "\n",
-        "# [aic_ren_cl] LL = ", formatC(LL, width=10, format="d"), "\n" , sep="")
+        "# [aic_ren_cl] LL = ", formatC(LL, width=6, format="d"), "\n" , sep="")
   
     start_time <- Sys.time()
 
@@ -321,10 +275,9 @@ aic_ren_cl <- function( ns = 600, q_c_pvec=c(0,0,1), q_c_op="4k", nprobe=2^16 , 
       i2 <- ( (idx[k]-1) %% LL[1] ) %/% LL[2] + 1 
       i3 <- ( (idx[k]-1) %% LL[2] ) %/% LL[3] + 1
       i4 <- ( (idx[k]-1) %% LL[3] ) %/% LL[4] + 1
-      i5 <- ( (idx[k]-1) %% LL[4] ) %/% LL[5] + 1
-      i6 <- ( (idx[k]-1) %% LL[5] ) + 1
+      i5 <- ( (idx[k]-1) %% LL[4] ) + 1
   
-      # message ( " idx ", idx[k] , " ---> ", formatC( c(i1, i2, i3, i4, i5, i6), width=4, format="d" ) )
+      # message ( " idx ", idx[k] , " ---> ", formatC( c(i1, i2, i3, i4, i5), width=4, format="d" ) )
 
       #####################################################
       # per quark flavor and gluon
@@ -335,17 +288,17 @@ aic_ren_cl <- function( ns = 600, q_c_pvec=c(0,0,1), q_c_op="4k", nprobe=2^16 , 
       q_c <- NA
       g   <- NA
 
-      if ( field == "kaon" ) 
+      if ( field == "pion" )
       {
-        q_u <- q_c_ll$data[i1,] + q_d_ll$data[i3,]
+        q_u <- q_c_ll$data[i1,] + q_d_ll$data[i2,]
   
-        q_d <-                    q_d_ll$data[i3,]
+        q_d <- q_c_ll$data[i1,] + q_d_ll$data[i2,]
       
-        q_s <- q_c_ss$data[i2,] + q_d_ss$data[i4,]
+        q_s <-                    q_d_ss$data[i3,]
       
-        q_c <-                    q_d_cc$data[i5,]
+        q_c <-                    q_d_cc$data[i4,]
   
-        g   <-                                      g_d$data[i6,]
+        g   <-                                      g_d$data[i5,]
       }
   
       # sum of quark flavors
@@ -371,7 +324,7 @@ aic_ren_cl <- function( ns = 600, q_c_pvec=c(0,0,1), q_c_op="4k", nprobe=2^16 , 
       q_c_r <- sZ_QQ2 * q_c + qg_aux
   
   
-      a <- q_c_ll$f$V10[i1] * q_c_ss$f$V10[i2] * q_d_ll$f$V10[i3] * q_d_ss$f$V10[i4] * q_d_cc$f$V10[i5] * g_d$f$V10[i6]
+      a <- q_c_ll$f$V10[i1] * q_d_ll$f$V10[i2] * q_d_ss$f$V10[i3] * q_d_cc$f$V10[i4] * g_d$f$V10[i5]
   
       # w$res[k,] <- c( mean(q_r), sqrt(var(q_r)), mean(g_r), sqrt(var(g_r)), a )
       c( a, 
@@ -503,12 +456,11 @@ aic_ren_cl <- function( ns = 600, q_c_pvec=c(0,0,1), q_c_op="4k", nprobe=2^16 , 
 
     w <- list()
   
-    w$n <-   q_c_ll$n * q_c_ss$n * q_d_ll$n * q_d_ss$n * q_d_cc$n
+    w$n <-   q_c_ll$n * q_d_ll$n * q_d_ss$n * q_d_cc$n
 
-    LL <- c(            q_c_ss$n * q_d_ll$n * q_d_ss$n * q_d_cc$n, 
-                                   q_d_ll$n * q_d_ss$n * q_d_cc$n, 
-                                              q_d_ss$n * q_d_cc$n, 
-                                                         q_d_cc$n )
+    LL <- c(             q_d_ll$n * q_d_ss$n * q_d_cc$n, 
+                                    q_d_ss$n * q_d_cc$n, 
+                                               q_d_cc$n )
     cat("# [aic_ren_cl] w n = ", w$n, "\n",
         "# [aic_ren_cl] LL = ", formatC(LL, width=6, format="d"), "\n" , sep="")
   
@@ -530,23 +482,22 @@ aic_ren_cl <- function( ns = 600, q_c_pvec=c(0,0,1), q_c_op="4k", nprobe=2^16 , 
       i1 <- ( (idx[k]-1)          ) %/% LL[1] + 1
       i2 <- ( (idx[k]-1) %% LL[1] ) %/% LL[2] + 1 
       i3 <- ( (idx[k]-1) %% LL[2] ) %/% LL[3] + 1
-      i4 <- ( (idx[k]-1) %% LL[3] ) %/% LL[4] + 1
-      i5 <- ( (idx[k]-1) %% LL[4] )           + 1
+      i4 <- ( (idx[k]-1) %% LL[3] )           + 1
   
       q_u <- NA
       q_d <- NA
       q_s <- NA
       q_c <- NA
-      if ( field == "kaon" ) 
+
+      if ( field == "pion" ) 
       {
-        q_u <- q_c_ll$data[i1,] + q_d_ll$data[i3,]
+        q_u <- q_c_ll$data[i1,] + q_d_ll$data[i2,]
   
-        q_d <-                    q_d_ll$data[i3,]
+        q_d <- q_c_ll$data[i1,] + q_d_ll$data[i2,]
       
-        q_s <- q_c_ss$data[i2,] + q_d_ss$data[i4,]
-      
-        q_c <-                    q_d_cc$data[i5,]
-  
+        q_s <-                    q_d_ss$data[i3,]
+       
+        q_c <-                    q_d_cc$data[i4,]
       }
 
       # sum of quark flavors
@@ -555,7 +506,7 @@ aic_ren_cl <- function( ns = 600, q_c_pvec=c(0,0,1), q_c_op="4k", nprobe=2^16 , 
       # renormalized combination
       q_r <- sZ_QQ2 * q_f
   
-      a <- q_c_ll$f$V10[i1] * q_c_ss$f$V10[i2] * q_d_ll$f$V10[i3] * q_d_ss$f$V10[i4] * q_d_cc$f$V10[i5]
+      a <- q_c_ll$f$V10[i1] * q_d_ll$f$V10[i2] * q_d_ss$f$V10[i3] * q_d_cc$f$V10[i4]
   
       # w$res[k,] <- c( mean(q_r), sqrt(var(q_r)), mean(g_r), sqrt(var(g_r)), a )
       c( a, mean(q_r),   sqrt(var(q_r)) )
@@ -655,11 +606,10 @@ aic_ren_cl <- function( ns = 600, q_c_pvec=c(0,0,1), q_c_op="4k", nprobe=2^16 , 
 
     w <- list()
   
-    w$n <-   q_c_ll$n * q_c_ss$n * q_d_ll$n * q_d_ss$n
+    w$n <-   q_c_ll$n * q_d_ll$n * q_d_ss$n
 
-    LL <- c(            q_c_ss$n * q_d_ll$n * q_d_ss$n,
-                                   q_d_ll$n * q_d_ss$n, 
-                                              q_d_ss$n )
+    LL <- c(             q_d_ll$n * q_d_ss$n,
+                                    q_d_ss$n )
 
     cat("# [aic_ren_cl] w n = ", w$n, "\n",
         "# [aic_ren_cl] LL = ", formatC(LL, width=6, format="d"), "\n" , sep="")
@@ -682,14 +632,13 @@ aic_ren_cl <- function( ns = 600, q_c_pvec=c(0,0,1), q_c_op="4k", nprobe=2^16 , 
   
       i1 <- ( (idx[k]-1)          ) %/% LL[1] + 1
       i2 <- ( (idx[k]-1) %% LL[1] ) %/% LL[2] + 1 
-      i3 <- ( (idx[k]-1) %% LL[2] ) %/% LL[3] + 1
-      i4 <- ( (idx[k]-1) %% LL[3] )           + 1
+      i3 <- ( (idx[k]-1) %% LL[2] )           + 1
   
-      q_u <- q_c_ll$data[i1,] + q_d_ll$data[i3,]
+      q_u <- q_c_ll$data[i1,] + q_d_ll$data[i2,]
   
-      q_d <-                    q_d_ll$data[i3,]
+      q_d <- q_c_ll$data[i1,] + q_d_ll$data[i2,]
       
-      q_s <- q_c_ss$data[i2,] + q_d_ss$data[i4,]
+      q_s <-                    q_d_ss$data[i3,]
 
       # sum of quark flavors
       q_f <- q_u + q_d - 2 * q_s
@@ -697,11 +646,7 @@ aic_ren_cl <- function( ns = 600, q_c_pvec=c(0,0,1), q_c_op="4k", nprobe=2^16 , 
       # renormalized combination
       q_r <- sZ_QQ2 * q_f
 
-      a <- q_c_ll$f$V10[i1] * q_c_ss$f$V10[i2] * q_d_ll$f$V10[i3] * q_d_ss$f$V10[i4]
-
-
-      str(a)
-      # str(q_r)
+      a <- q_c_ll$f$V10[i1] * q_d_ll$f$V10[i2] * q_d_ss$f$V10[i3]
 
       c( a, mean(q_r),   sqrt(var(q_r)) )
 
